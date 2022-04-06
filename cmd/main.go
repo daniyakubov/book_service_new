@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/daniyakubov/book_service_n/pkg/http_service"
+	"gopkg.in/redis.v5"
 	"net/http"
 	"time"
 
