@@ -3,14 +3,12 @@ package book_Service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
+	"github.com/daniyakubov/book_service_n/pkg/cache"
+	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
+	errors "github.com/fiverr/go_errors"
 	"io/ioutil"
 	"strings"
-
-	action "github.com/daniyakubov/book_service/pkg/action"
-	"github.com/daniyakubov/book_service/pkg/book_Service/models"
-	"github.com/daniyakubov/book_service/pkg/cache"
-	"github.com/daniyakubov/book_service/pkg/elastic_service"
-	errors "github.com/fiverr/go_errors"
 )
 
 type BookService struct {

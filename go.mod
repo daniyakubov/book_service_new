@@ -1,4 +1,4 @@
-module github.com/daniyakubov/book_service
+module github.com/daniyakubov/book_service_n
 
 go 1.15
 

@@ -3,15 +3,14 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/daniyakubov/book_service_n/pkg/consts"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/daniyakubov/book_service/pkg/consts"
-
-	"github.com/daniyakubov/book_service/pkg/book_Service"
-	"github.com/daniyakubov/book_service/pkg/book_Service/models"
+	"github.com/daniyakubov/book_service_n/pkg/book_service"
+	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 )
 
 type HttpHandler struct {

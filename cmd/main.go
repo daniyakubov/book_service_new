@@ -1,17 +1,14 @@
 package main
 
 import (
+	"github.com/daniyakubov/book_service_n/pkg/http_service"
 	"net/http"
 	"time"
 
-	"github.com/daniyakubov/book_service/pkg/http_service"
-
-	"gopkg.in/redis.v5"
-
-	"github.com/daniyakubov/book_service/pkg/book_Service"
-	"github.com/daniyakubov/book_service/pkg/cache"
-	"github.com/daniyakubov/book_service/pkg/consts"
-	"github.com/daniyakubov/book_service/pkg/elastic_service"
+	"github.com/daniyakubov/book_service_n/pkg/book_service"
+	"github.com/daniyakubov/book_service_n/pkg/cache"
+	"github.com/daniyakubov/book_service_n/pkg/consts"
+	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
 )
 
 func main() {

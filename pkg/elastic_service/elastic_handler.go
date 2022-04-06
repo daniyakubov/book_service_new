@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/daniyakubov/book_service/pkg/consts"
-
+	"github.com/daniyakubov/book_service_n/pkg/consts"
 	errors "github.com/fiverr/go_errors"
 )
 
