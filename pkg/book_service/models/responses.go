@@ -62,3 +62,12 @@ type StoreDistinctAuthors struct {
 type StoreCount struct {
 	Count int `json:"count"`
 }
+
+type StoreResponse struct {
+	Count       int `json:"books_num"`
+	DistinctAut int `json:"distinct_authors_num"`
+}
+
+type PutResponse struct {
+	Id string `json:"id"`
+}

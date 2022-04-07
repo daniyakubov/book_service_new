@@ -1,16 +1,13 @@
 package http_service
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/daniyakubov/book_service_n/pkg/book_service"
+	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 	"github.com/daniyakubov/book_service_n/pkg/consts"
-	"io/ioutil"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/daniyakubov/book_service_n/pkg/book_service"
-	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 )
 
 type HttpHandler struct {
@@ -25,176 +22,124 @@ func NewHttpHandler(client http.Client, bookService book_Service.BookService) Ht
 	}
 }
 
-func (h *HttpHandler) PutBook(w http.ResponseWriter, req *http.Request) {
+func errorResponse(err error) gin.H {
+	return gin.H{"error": err.Error()}
+}
+
+func (h *HttpHandler) PutBook(c *gin.Context) {
 	var hit models.Hit
-	body, err := ioutil.ReadAll(req.Body)
+
+	err := c.Bind(&hit)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	if err := json.Unmarshal(body, &hit); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	r := models.NewRequest(&hit, req.URL.Path)
+	r := models.NewRequest(&hit, c.FullPath())
 	s, err := h.bookService.PutBook(&r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	fmt.Fprintf(w, s)
-
+	c.JSON(http.StatusOK, s)
 }
 
-func (h *HttpHandler) PostBook(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) PostBook(c *gin.Context) {
 
 	var hit models.Hit
 
-	body, err := ioutil.ReadAll(req.Body)
-
+	err := c.Bind(&hit)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := json.Unmarshal(body, &hit); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	r := models.NewRequest(&hit, req.URL.Path)
+	r := models.NewRequest(&hit, c.FullPath())
 	err = h.bookService.PostBook(&r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 }
 
-func (h *HttpHandler) GetBook(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) GetBook(c *gin.Context) {
 	var hit models.Hit
-	err := req.ParseForm()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	hit.Id = req.FormValue(consts.Id)
+	hit.Id = c.Query(consts.Id)
+	hit.Username = c.Query(consts.UserName)
 
-	hit.Username = req.FormValue(consts.UserName)
-
-	r := models.NewRequest(&hit, req.URL.Path)
+	r := models.NewRequest(&hit, c.FullPath())
 
 	s, err := h.bookService.GetBook(&r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	fmt.Fprintf(w, s)
+	c.JSON(http.StatusOK, s.Source)
 
 }
 
-func (h *HttpHandler) DeleteBook(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) DeleteBook(c *gin.Context) {
 	var hit models.Hit
-	err := req.ParseForm()
+	hit.Id = c.Query(consts.Id)
+	hit.Username = c.Query(consts.UserName)
+
+	r := models.NewRequest(&hit, c.FullPath())
+	err := h.bookService.DeleteBook(&r)
+
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	hit.Id = req.FormValue(consts.Id)
-	hit.Username = req.FormValue(consts.UserName)
-
-	r := models.NewRequest(&hit, req.URL.Path)
-
-	err = h.bookService.DeleteBook(&r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 }
 
-func (h *HttpHandler) Book(w http.ResponseWriter, req *http.Request) {
+func (h *HttpHandler) Search(c *gin.Context) {
+	var hit models.Hit
+	hit.Title = c.Query(consts.Title)
+	hit.Author = c.Query(consts.Author)
 
-	if req.Method == consts.PutMethod {
-		h.PutBook(w, req)
-	} else if req.Method == consts.PostMethod {
-		h.PostBook(w, req)
+	sRange := c.Query(consts.PriceRange)
+	if sRange == "" {
+		hit.PriceStart = 0
+		hit.PriceEnd = 0
+	} else {
+		priceRange := strings.Split(sRange, "-")
 
-	} else if req.Method == consts.GetMethod {
-		h.GetBook(w, req)
-	} else if req.Method == consts.DeleteMethod {
-		h.DeleteBook(w, req)
+		hit.PriceStart, _ = strconv.ParseFloat(priceRange[0], 32)
+		hit.PriceEnd, _ = strconv.ParseFloat(priceRange[1], 32)
 	}
+	hit.Username = c.Query(consts.UserName)
+	r := models.NewRequest(&hit, c.FullPath())
 
-}
-
-func (h *HttpHandler) Search(w http.ResponseWriter, req *http.Request) {
-	if req.Method == consts.GetMethod {
-		var hit models.Hit
-		err := req.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		hit.Title = req.FormValue(consts.Title)
-		hit.Author = req.FormValue(consts.Author)
-		sRange := req.FormValue(consts.PriceRange)
-		if sRange == "" {
-			hit.PriceStart = 0
-			hit.PriceEnd = 0
-		} else {
-			priceRange := strings.Split(sRange, "-")
-
-			hit.PriceStart, _ = strconv.ParseFloat(priceRange[0], 32)
-			hit.PriceEnd, _ = strconv.ParseFloat(priceRange[1], 32)
-		}
-		hit.Username = req.FormValue(consts.UserName)
-		r := models.NewRequest(&hit, req.URL.Path)
-
-		s, err := h.bookService.Search(&r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		fmt.Fprintf(w, s)
-	}
-
-}
-
-func (h *HttpHandler) Store(w http.ResponseWriter, req *http.Request) {
-	if req.Method == consts.GetMethod {
-		err := req.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		var hit models.Hit
-		hit.Username = req.FormValue(consts.UserName)
-
-		r := models.NewRequest(&hit, req.URL.Path)
-		s, err := h.bookService.Store(&r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		fmt.Fprintf(w, s)
-	}
-}
-
-func (h *HttpHandler) Activity(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
+	s, err := h.bookService.Search(&r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	user := req.FormValue(consts.UserName)
+	c.JSON(http.StatusOK, s)
+
+}
+
+func (h *HttpHandler) Store(c *gin.Context) {
+
+	var hit models.Hit
+	hit.Username = c.Query(consts.UserName)
+
+	r := models.NewRequest(&hit, c.FullPath())
+	s, err := h.bookService.Store(&r)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	c.JSON(http.StatusOK, s)
+}
+
+func (h *HttpHandler) Activity(c *gin.Context) {
+	user := c.Query(consts.UserName)
+
 	s, err := h.bookService.Activity(user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	fmt.Fprintf(w, s)
+	c.JSON(http.StatusOK, s)
 
 }
