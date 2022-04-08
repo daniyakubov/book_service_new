@@ -64,8 +64,8 @@ type StoreCount struct {
 }
 
 type StoreResponse struct {
-	Count       int `json:"books_num"`
-	DistinctAut int `json:"distinct_authors_num"`
+	Count       int64 `json:"books_num"`
+	DistinctAut int   `json:"distinct_authors_num"`
 }
 
 type PutResponse struct {

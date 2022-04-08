@@ -37,8 +37,8 @@ func main() {
 	router.PUT("/book", httpHandler.PutBook)
 	router.POST("/book", httpHandler.PostBook)
 	router.GET("/search", httpHandler.Search)
-	/*		router.GET("/store", httpHandler.Store)
-			router.GET("/activity", httpHandler.Activity)*/
+	router.GET("/store", httpHandler.Store)
+	router.GET("/activity", httpHandler.Activity)
 
 	err = router.Run(consts.HttpAddress)
 	if err != nil {

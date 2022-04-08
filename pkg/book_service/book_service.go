@@ -2,10 +2,12 @@ package book_Service
 
 import (
 	"encoding/json"
+	action "github.com/daniyakubov/book_service_n/pkg/action"
 	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 	"github.com/daniyakubov/book_service_n/pkg/cache"
 	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
 	errors "github.com/fiverr/go_errors"
+	"strings"
 )
 
 type BookService struct {
@@ -56,19 +58,15 @@ func (b *BookService) PostBook(req *models.Request) error {
 
 func (b *BookService) GetBook(req *models.Request) (*models.Source, error) {
 
-	get, err := b.elasticHandler.Get(req.Data.Id)
+	src, err := b.elasticHandler.Get(req.Data.Id)
 
-	var getResp models.Source
-	if err = json.Unmarshal(get.Source, &getResp); err != nil {
-		return nil, err
-	}
-	getResp.Id = req.Data.Id
+	src.Id = req.Data.Id
 
 	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
 	if err != nil {
 		return nil, err
 	}
-	return &getResp, nil
+	return src, nil
 
 }
 
@@ -102,40 +100,14 @@ func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
 
 }
 
-/*
 func (b *BookService) Store(req *models.Request) (*models.StoreResponse, error) {
 
-	resp1, resp2, err := b.elasticHandler.Store()
-
-	defer resp1.Body.Close()
-
-	body, err := ioutil.ReadAll(resp1.Body)
+	count, distinctAuth, err := b.elasticHandler.Store()
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
 
-	var count models.StoreCount
-	if err := json.Unmarshal(body, &count); err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-
-	body2, err := ioutil.ReadAll(resp2.Body)
-
-	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-
-	defer resp2.Body.Close()
-
-	var distinctAut models.StoreDistinctAuthors
-	if err := json.Unmarshal(body2, &distinctAut); err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
-	if err != nil {
-		return nil, err
-	}
-	resp := models.StoreResponse{count.Count, distinctAut.Hits.Total.Value}
+	resp := models.StoreResponse{count, distinctAuth}
 	return &resp, nil
 }
 
@@ -158,4 +130,3 @@ func (b *BookService) Activity(username string) ([]action.Action, error) {
 	return res, nil
 
 }
-*/

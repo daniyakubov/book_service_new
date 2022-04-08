@@ -116,7 +116,6 @@ func (h *HttpHandler) Search(c *gin.Context) {
 
 }
 
-/*
 func (h *HttpHandler) Store(c *gin.Context) {
 
 	var hit models.Hit
@@ -142,4 +141,3 @@ func (h *HttpHandler) Activity(c *gin.Context) {
 	c.JSON(http.StatusOK, s)
 
 }
-*/

@@ -46,17 +46,22 @@ func (e *ElasticHandler) Put(postBody []byte) (string, error) {
 
 	return put.Id, err
 }
-func (e *ElasticHandler) Get(id string) (get *elastic.GetResult, err error) {
+func (e *ElasticHandler) Get(id string) (src *models.Source, err error) {
 
-	get, err = e.Client.Get().
+	get, err := e.Client.Get().
 		Index("books").
 		Id(id).
 		Do(*e.Ctx)
 	if err != nil {
-		return get, errors.Wrap(err, err.Error())
+		return nil, errors.Wrap(err, err.Error())
 	}
 
-	return get, err
+	var getResp models.Source
+	if err = json.Unmarshal(get.Source, &getResp); err != nil {
+		return nil, err
+	}
+
+	return &getResp, err
 }
 
 func (e *ElasticHandler) Delete(id string) error {
@@ -122,28 +127,29 @@ func (e *ElasticHandler) Search(title string, author string, priceStart float64,
 	return res, err
 }
 
-/*
-func (e *ElasticHandler) Store() (resp1 *http.Response, resp2 *http.Response, err error) {
-	s1 := fmt.Sprintf(`{"query": {"match_all": {}}}`)
-	myJson := bytes.NewBuffer([]byte(s1))
+func (e *ElasticHandler) Store() (int64, int, error) {
 
-	req, err := http.NewRequest(consts.GetMethod, e.Url+"_count/", myJson)
+	count, err := e.Client.Count("books").Do(context.TODO())
 	if err != nil {
-		return nil, nil, errors.Wrap(err, err.Error())
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp1, err = e.Client.Do(req)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, err.Error())
+		return 0, 0, errors.Wrap(err, err.Error())
 	}
 
-	s2 := fmt.Sprintf(`{"aggs" : {"authors_count" : {"cardinality" : {"field" : "authorsName.keyword"}}}}`)
-	myJson2 := bytes.NewBuffer([]byte(s2))
-
-	resp2, err = e.Client.Post(e.Url+"_search/", "application/json", myJson2)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, err.Error())
+	all := elastic.NewMatchAllQuery()
+	cardinalityAgg := elastic.NewCardinalityAggregation().Field("author.keyword")
+	builder := e.Client.Search().Index("books").Query(all).Pretty(true)
+	builder = builder.Aggregation("distinctAuthors", cardinalityAgg)
+	searchResult, err := builder.Pretty(true).Do(context.TODO())
+	agg := searchResult.Aggregations
+	if agg == nil {
+		return 0, 0, errors.New("agg returned nil")
 	}
-	return resp1, resp2, nil
+	agg2, found := agg.Cardinality("distinctAuthors")
+	if !found {
+		return 0, 0, errors.New("not found")
+	}
+	if agg2 == nil || agg2.Value == nil {
+		return 0, 0, errors.New("expected != nil; got: nil")
+	}
+
+	return count, int(*agg2.Value), nil
 }
-*/
