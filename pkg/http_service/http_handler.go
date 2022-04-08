@@ -6,6 +6,8 @@ import (
 	"github.com/daniyakubov/book_service_n/pkg/consts"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type HttpHandler struct {
@@ -22,7 +24,7 @@ func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }
 
-/*func (h *HttpHandler) PutBook(c *gin.Context) {
+func (h *HttpHandler) PutBook(c *gin.Context) {
 	var hit models.Hit
 
 	err := c.Bind(&hit)
@@ -55,7 +57,7 @@ func (h *HttpHandler) PostBook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-}*/
+}
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
 	var hit models.Hit
@@ -87,7 +89,6 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 	}
 }
 
-/*
 func (h *HttpHandler) Search(c *gin.Context) {
 	var hit models.Hit
 	hit.Title = c.Query(consts.Title)
@@ -115,6 +116,7 @@ func (h *HttpHandler) Search(c *gin.Context) {
 
 }
 
+/*
 func (h *HttpHandler) Store(c *gin.Context) {
 
 	var hit models.Hit

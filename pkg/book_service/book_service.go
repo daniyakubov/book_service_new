@@ -5,6 +5,7 @@ import (
 	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 	"github.com/daniyakubov/book_service_n/pkg/cache"
 	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
+	errors "github.com/fiverr/go_errors"
 )
 
 type BookService struct {
@@ -19,38 +20,30 @@ func NewBookService(booksCache cache.Cache, elasticHandler *elastic_service.Elas
 	}
 }
 
-/*
 func (b *BookService) PutBook(req *models.Request) (*models.PutResponse, error) {
 
 	postBody, err := json.Marshal(req.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
-	resp, err := b.elasticHandler.Put(postBody)
+	id, err := b.elasticHandler.Put(postBody)
 
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-	var idResp models.PutBookResponse
-	if err = json.Unmarshal(body, &idResp); err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
+
 	err = b.booksCache.Push(req.Data.Username, "method:Put,"+"route:"+req.Route)
 	if err != nil {
 		return nil, err
 	}
-	res := models.PutResponse{idResp.Id}
+	res := models.PutResponse{id}
 	return &res, nil
 
 }
 
 func (b *BookService) PostBook(req *models.Request) error {
 
-	_, err := b.elasticHandler.Post(req.Data.Title, req.Data.Id)
+	err := b.elasticHandler.Post(req.Data.Title, req.Data.Id)
 	if err != nil {
 		return err
 	}
@@ -60,7 +53,7 @@ func (b *BookService) PostBook(req *models.Request) error {
 	}
 	return nil
 }
-*/
+
 func (b *BookService) GetBook(req *models.Request) (*models.Source, error) {
 
 	get, err := b.elasticHandler.Get(req.Data.Id)
@@ -94,29 +87,11 @@ func (b *BookService) DeleteBook(req *models.Request) error {
 
 }
 
-/*
 func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
 
-	resp, err := b.elasticHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
+	res, err := b.elasticHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
 	if err != nil {
 		return nil, err
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-
-	var s models.SearchBookResponse
-	if err := json.Unmarshal(body, &s); err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-	length := len(s.Hits.Hits)
-	res := make([]models.Source, int(length))
-	for i := 0; i < length; i++ {
-		res[i] = s.Hits.Hits[i].Source
-		res[i].Id = s.Hits.Hits[i].Id
 	}
 
 	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
@@ -127,6 +102,7 @@ func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
 
 }
 
+/*
 func (b *BookService) Store(req *models.Request) (*models.StoreResponse, error) {
 
 	resp1, resp2, err := b.elasticHandler.Store()
