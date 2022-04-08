@@ -2,13 +2,9 @@ package book_Service
 
 import (
 	"encoding/json"
-	action "github.com/daniyakubov/book_service_n/pkg/action"
 	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 	"github.com/daniyakubov/book_service_n/pkg/cache"
 	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
-	errors "github.com/fiverr/go_errors"
-	"io/ioutil"
-	"strings"
 )
 
 type BookService struct {
@@ -23,6 +19,7 @@ func NewBookService(booksCache cache.Cache, elasticHandler *elastic_service.Elas
 	}
 }
 
+/*
 func (b *BookService) PutBook(req *models.Request) (*models.PutResponse, error) {
 
 	postBody, err := json.Marshal(req.Data)
@@ -63,22 +60,16 @@ func (b *BookService) PostBook(req *models.Request) error {
 	}
 	return nil
 }
+*/
+func (b *BookService) GetBook(req *models.Request) (*models.Source, error) {
 
-func (b *BookService) GetBook(req *models.Request) (*models.GetBookResponse, error) {
+	get, err := b.elasticHandler.Get(req.Data.Id)
 
-	resp, err := b.elasticHandler.Get(req.Data.Id)
-	if err != nil {
+	var getResp models.Source
+	if err = json.Unmarshal(get.Source, &getResp); err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
-	}
-	var getResp models.GetBookResponse
-	if err = json.Unmarshal(body, &getResp); err != nil {
-		return nil, err
-	}
+	getResp.Id = req.Data.Id
 
 	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
 	if err != nil {
@@ -90,16 +81,11 @@ func (b *BookService) GetBook(req *models.Request) (*models.GetBookResponse, err
 
 func (b *BookService) DeleteBook(req *models.Request) error {
 
-	resp, err := b.elasticHandler.Delete(req.Data.Id)
+	err := b.elasticHandler.Delete(req.Data.Id)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, err.Error())
-	}
 	err = b.booksCache.Push(req.Data.Username, "method:Delete,"+"route:"+req.Route)
 	if err != nil {
 		return err
@@ -108,6 +94,7 @@ func (b *BookService) DeleteBook(req *models.Request) error {
 
 }
 
+/*
 func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
 
 	resp, err := b.elasticHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
@@ -195,3 +182,4 @@ func (b *BookService) Activity(username string) ([]action.Action, error) {
 	return res, nil
 
 }
+*/

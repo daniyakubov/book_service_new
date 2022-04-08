@@ -9,7 +9,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/olivere/elastic/v7 v7.0.32 // indirect
+	github.com/olivere/elastic/v7 v7.0.32
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.19.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

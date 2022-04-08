@@ -1,29 +1,28 @@
 package elastic_service
 
 import (
-	"bytes"
-	"fmt"
-	"net/http"
-
-	"github.com/daniyakubov/book_service_n/pkg/consts"
+	"context"
 	errors "github.com/fiverr/go_errors"
+	"github.com/olivere/elastic/v7"
 )
 
 type ElasticHandler struct {
+	Ctx          *context.Context
 	Url          string
-	Client       *http.Client
+	Client       *elastic.Client
 	maxSizeQuery int
 }
 
-func NewElasticHandler(url string, client *http.Client, maxSizeQuery int) ElasticHandler {
+func NewElasticHandler(ctx *context.Context, url string, client *elastic.Client, maxSizeQuery int) ElasticHandler {
 	return ElasticHandler{
+		ctx,
 		url,
 		client,
 		maxSizeQuery,
 	}
 }
 
-func (e *ElasticHandler) Post(title string, id string) (resp *http.Response, err error) {
+/*func (e *ElasticHandler) Post(title string, id string) (resp *http.Response, err error) {
 	s := fmt.Sprintf(`{"doc": {"%s": "%s"}}`, consts.Title, title)
 	myJson := bytes.NewBuffer([]byte(s))
 
@@ -40,28 +39,35 @@ func (e *ElasticHandler) Put(postBody []byte) (resp *http.Response, err error) {
 		return resp, errors.Wrap(err, err.Error())
 	}
 	return resp, err
-}
-func (e *ElasticHandler) Get(id string) (resp *http.Response, err error) {
-	resp, err = e.Client.Get(e.Url + "_doc/" + id)
-	if err != nil {
-		return resp, errors.Wrap(err, err.Error())
-	}
-	return resp, err
-}
+}*/
+func (e *ElasticHandler) Get(id string) (get *elastic.GetResult, err error) {
 
-func (e *ElasticHandler) Delete(id string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(consts.DeleteMethod, e.Url+"_doc/"+id, nil)
+	get, err = e.Client.Get().
+		Index("books").
+		Id(id).
+		Do(*e.Ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return get, errors.Wrap(err, err.Error())
 	}
-	resp, err = e.Client.Do(req)
-	if err != nil {
-		return resp, errors.Wrap(err, err.Error())
-	}
-	return resp, err
 
+	return get, err
 }
 
+func (e *ElasticHandler) Delete(id string) error {
+
+	_, err := e.Client.Delete().
+		Index("books").
+		Id(id).
+		Do(*e.Ctx)
+	if err != nil {
+		return errors.Wrap(err, err.Error())
+	}
+
+	return err
+
+}
+
+/*
 func (e *ElasticHandler) Search(title string, author string, priceStart float64, priceEnd float64) (resp *http.Response, err error) {
 	s := ""
 	if title == "" && author == "" && priceEnd == 0 {
@@ -119,3 +125,4 @@ func (e *ElasticHandler) Store() (resp1 *http.Response, resp2 *http.Response, er
 	}
 	return resp1, resp2, nil
 }
+*/
