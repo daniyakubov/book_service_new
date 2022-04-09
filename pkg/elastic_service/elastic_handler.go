@@ -27,7 +27,11 @@ func NewElasticHandler(ctx *context.Context, url string, client *elastic.Client,
 }
 
 func (e *ElasticHandler) Post(title string, id string) (err error) {
-	_, err = e.Client.Update().Index(consts.Index).Id(id).Doc(map[string]interface{}{"title": title}).Do(*e.Ctx)
+	_, err = e.Client.Update().
+		Index(consts.Index).
+		Id(id).
+		Doc(map[string]interface{}{consts.Title: title}).
+		Do(*e.Ctx)
 	if err != nil {
 		return errors.Wrap(err, err.Error())
 	}
