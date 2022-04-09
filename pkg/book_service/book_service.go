@@ -23,13 +23,11 @@ func NewBookService(booksCache cache.Cache, elasticHandler *elastic_service.Elas
 }
 
 func (b *BookService) PutBook(req *models.Request) (*models.PutResponse, error) {
-
 	postBody, err := json.Marshal(req.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
 	id, err := b.elasticHandler.Put(postBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +38,14 @@ func (b *BookService) PutBook(req *models.Request) (*models.PutResponse, error) 
 	}
 	res := models.PutResponse{id}
 	return &res, nil
-
 }
 
 func (b *BookService) PostBook(req *models.Request) error {
-
 	err := b.elasticHandler.Post(req.Data.Title, req.Data.Id)
 	if err != nil {
 		return err
 	}
+
 	err = b.booksCache.Push(req.Data.Username, "method:Post,"+"route:"+req.Route)
 	if err != nil {
 		return err
@@ -56,10 +53,8 @@ func (b *BookService) PostBook(req *models.Request) error {
 	return nil
 }
 
-func (b *BookService) GetBook(req *models.Request) (*models.Source, error) {
-
+func (b *BookService) GetBook(req *models.Request) (*models.Book, error) {
 	src, err := b.elasticHandler.Get(req.Data.Id)
-
 	src.Id = req.Data.Id
 
 	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
@@ -67,11 +62,9 @@ func (b *BookService) GetBook(req *models.Request) (*models.Source, error) {
 		return nil, err
 	}
 	return src, nil
-
 }
 
 func (b *BookService) DeleteBook(req *models.Request) error {
-
 	err := b.elasticHandler.Delete(req.Data.Id)
 	if err != nil {
 		return err
@@ -82,11 +75,9 @@ func (b *BookService) DeleteBook(req *models.Request) error {
 		return err
 	}
 	return nil
-
 }
 
-func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
-
+func (b *BookService) Search(req *models.Request) ([]models.Book, error) {
 	res, err := b.elasticHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
 	if err != nil {
 		return nil, err
@@ -97,11 +88,9 @@ func (b *BookService) Search(req *models.Request) ([]models.Source, error) {
 		return nil, err
 	}
 	return res, nil
-
 }
 
 func (b *BookService) Store(req *models.Request) (*models.StoreResponse, error) {
-
 	count, distinctAuth, err := b.elasticHandler.Store()
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
@@ -112,13 +101,12 @@ func (b *BookService) Store(req *models.Request) (*models.StoreResponse, error) 
 }
 
 func (b *BookService) Activity(username string) ([]action.Action, error) {
-
 	actions, err := b.booksCache.Get(username)
 	if err != nil {
 		return nil, err
 	}
-	var res []action.Action = make([]action.Action, int(len(actions)))
 
+	var res []action.Action = make([]action.Action, int(len(actions)))
 	for i := 0; i < len(actions); i++ {
 		s := strings.Split(actions[i], ",")
 		method := strings.Split(s[0], ":")[1]
@@ -126,7 +114,5 @@ func (b *BookService) Activity(username string) ([]action.Action, error) {
 		res[i].Method = method
 		res[i].Route = route
 	}
-
 	return res, nil
-
 }

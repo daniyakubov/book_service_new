@@ -26,7 +26,6 @@ func NewElasticHandler(ctx *context.Context, url string, client *elastic.Client,
 }
 
 func (e *ElasticHandler) Post(title string, id string) (err error) {
-
 	_, err = e.Client.Update().Index("books").Id(id).Doc(map[string]interface{}{"title": title}).Do(*e.Ctx)
 	if err != nil {
 		return errors.Wrap(err, err.Error())
@@ -35,7 +34,6 @@ func (e *ElasticHandler) Post(title string, id string) (err error) {
 }
 
 func (e *ElasticHandler) Put(postBody []byte) (string, error) {
-
 	put, err := e.Client.Index().
 		Index("books").
 		BodyString(string(postBody)).
@@ -43,11 +41,9 @@ func (e *ElasticHandler) Put(postBody []byte) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, err.Error())
 	}
-
 	return put.Id, err
 }
-func (e *ElasticHandler) Get(id string) (src *models.Source, err error) {
-
+func (e *ElasticHandler) Get(id string) (src *models.Book, err error) {
 	get, err := e.Client.Get().
 		Index("books").
 		Id(id).
@@ -56,16 +52,14 @@ func (e *ElasticHandler) Get(id string) (src *models.Source, err error) {
 		return nil, errors.Wrap(err, err.Error())
 	}
 
-	var getResp models.Source
+	var getResp models.Book
 	if err = json.Unmarshal(get.Source, &getResp); err != nil {
 		return nil, err
 	}
-
 	return &getResp, err
 }
 
 func (e *ElasticHandler) Delete(id string) error {
-
 	_, err := e.Client.Delete().
 		Index("books").
 		Id(id).
@@ -73,12 +67,10 @@ func (e *ElasticHandler) Delete(id string) error {
 	if err != nil {
 		return errors.Wrap(err, err.Error())
 	}
-
 	return err
-
 }
 
-func (e *ElasticHandler) Search(title string, author string, priceStart float64, priceEnd float64) (res []models.Source, err error) {
+func (e *ElasticHandler) Search(title string, author string, priceStart float64, priceEnd float64) (res []models.Book, err error) {
 	s := ""
 	if title == "" && author == "" && priceEnd == 0 {
 		s = fmt.Sprintf(`{"match_all": {}}`)
@@ -104,7 +96,6 @@ func (e *ElasticHandler) Search(title string, author string, priceStart float64,
 		Query(query).
 		Size(e.maxSizeQuery).
 		Do(context.TODO())
-
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
@@ -113,22 +104,19 @@ func (e *ElasticHandler) Search(title string, author string, priceStart float64,
 	}
 
 	length := len(searchResult.Hits.Hits)
-	res = make([]models.Source, length)
-
+	res = make([]models.Book, length)
 	for i := 0; i < length; i++ {
-		var src models.Source
+		var src models.Book
 		if err := json.Unmarshal(searchResult.Hits.Hits[i].Source, &src); err != nil {
 			return nil, errors.Wrap(err, err.Error())
 		}
 		res[i] = src
 		res[i].Id = searchResult.Hits.Hits[i].Id
 	}
-
 	return res, err
 }
 
 func (e *ElasticHandler) Store() (int64, int, error) {
-
 	count, err := e.Client.Count("books").Do(context.TODO())
 	if err != nil {
 		return 0, 0, errors.Wrap(err, err.Error())
@@ -150,6 +138,5 @@ func (e *ElasticHandler) Store() (int64, int, error) {
 	if agg2 == nil || agg2.Value == nil {
 		return 0, 0, errors.New("expected != nil; got: nil")
 	}
-
 	return count, int(*agg2.Value), nil
 }

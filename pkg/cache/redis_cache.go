@@ -1,10 +1,9 @@
 package cache
 
 import (
-	"time"
-
 	errors "github.com/fiverr/go_errors"
 	"gopkg.in/redis.v5"
+	"time"
 )
 
 var _ Cache = &RedisCache{}

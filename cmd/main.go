@@ -14,15 +14,11 @@ import (
 
 func main() {
 	ctx := context.Background()
-
 	client, err := elastic.NewClient(elastic.SetURL(consts.BooksUrl))
 	if err != nil {
 		panic(err)
 	}
-	//	client := http.Client{Timeout: time.Duration(consts.ClientTimeOut) * time.Second}
-
 	router := gin.Default()
-
 	eHandler := elastic_service.NewElasticHandler(&ctx, consts.BooksUrl, client, consts.MaxQueryResults)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     consts.Host,

@@ -26,7 +26,6 @@ func errorResponse(err error) gin.H {
 
 func (h *HttpHandler) PutBook(c *gin.Context) {
 	var hit models.Hit
-
 	err := c.Bind(&hit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
@@ -42,9 +41,7 @@ func (h *HttpHandler) PutBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) PostBook(c *gin.Context) {
-
 	var hit models.Hit
-
 	err := c.Bind(&hit)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
@@ -65,14 +62,12 @@ func (h *HttpHandler) GetBook(c *gin.Context) {
 	hit.Username = c.Query(consts.UserName)
 
 	r := models.NewRequest(&hit, c.FullPath())
-
 	s, err := h.bookService.GetBook(&r)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 	c.JSON(http.StatusOK, s)
-
 }
 
 func (h *HttpHandler) DeleteBook(c *gin.Context) {
@@ -82,7 +77,6 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 
 	r := models.NewRequest(&hit, c.FullPath())
 	err := h.bookService.DeleteBook(&r)
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -93,34 +87,30 @@ func (h *HttpHandler) Search(c *gin.Context) {
 	var hit models.Hit
 	hit.Title = c.Query(consts.Title)
 	hit.Author = c.Query(consts.Author)
-
 	sRange := c.Query(consts.PriceRange)
 	if sRange == "" {
 		hit.PriceStart = 0
 		hit.PriceEnd = 0
 	} else {
 		priceRange := strings.Split(sRange, "-")
-
 		hit.PriceStart, _ = strconv.ParseFloat(priceRange[0], 32)
 		hit.PriceEnd, _ = strconv.ParseFloat(priceRange[1], 32)
 	}
 	hit.Username = c.Query(consts.UserName)
-	r := models.NewRequest(&hit, c.FullPath())
 
+	r := models.NewRequest(&hit, c.FullPath())
 	s, err := h.bookService.Search(&r)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 	c.JSON(http.StatusOK, s)
-
 }
 
 func (h *HttpHandler) Store(c *gin.Context) {
 
 	var hit models.Hit
 	hit.Username = c.Query(consts.UserName)
-
 	r := models.NewRequest(&hit, c.FullPath())
 	s, err := h.bookService.Store(&r)
 	if err != nil {
@@ -132,12 +122,10 @@ func (h *HttpHandler) Store(c *gin.Context) {
 
 func (h *HttpHandler) Activity(c *gin.Context) {
 	user := c.Query(consts.UserName)
-
 	s, err := h.bookService.Activity(user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 	c.JSON(http.StatusOK, s)
-
 }
