@@ -89,7 +89,7 @@ PUT books/_doc/1
 {
   "title": "in cupidatat",
   "price": 1490.05,
-  "authorsName": "Ryan Estrada",
+  "author": "Ryan Estrada",
   "available": false,
   "date": "2015-01-01"
 }
@@ -120,46 +120,45 @@ We index 20 more books:
 ~~~
 POST books/_bulk
 {"index":{"_id":1}}
-{"title":"velit qui magna nostrud non reprehenderit","price":138.0108,"authorsName":"Trudy Carr","available":false,"date":"1993-05-20"}
+{"title":"velit qui magna nostrud non reprehenderit","price":138.0108,"author":"Trudy Carr","available":false,"date":"1993-05-20"}
 {"index":{"_id":2}}
-{"title":"quis sunt eu do est exercitation","price":143.5448,"authorsName":"Consuelo Pugh","available":true,"publish,date":"1976-05-17"}
+{"title":"quis sunt eu do est exercitation","price":143.5448,"author":"Consuelo Pugh","available":true,"publish,date":"1976-05-17"}
 {"index":{"_id":3}}
-{"title":"deserunt nisi adipisicing ex est in","price":41.0763,"authorsName":"Meadows Green","available":true,"date":"1979-12-23"}
+{"title":"deserunt nisi adipisicing ex est in","price":41.0763,"author":"Meadows Green","available":true,"date":"1979-12-23"}
 {"index":{"_id":4}}
-{"title":"eiusmod non reprehenderit duis eu nostrud","price":183.8798,"authorsName":"Catalina Riddle","available":false,"date":"1975-06-15"}
+{"title":"eiusmod non reprehenderit duis eu nostrud","price":183.8798,"author":"Catalina Riddle","available":false,"date":"1975-06-15"}
 {"index":{"_id":5}}
-{"title":"et esse ad culpa voluptate ex","price":45.7831,"authorsName":"Lacey Lee","available":true,"date":"2011-02-09"}
+{"title":"et esse ad culpa voluptate ex","price":45.7831,"author":"Lacey Lee","available":true,"date":"2011-02-09"}
 {"index":{"_id":6}}
-{"title":"magna laboris amet quis excepteur commodo","price":172.9611,"authorsName":"Mcpherson Matthews","available":true,"date":"1976-09-18"}
+{"title":"magna laboris amet quis excepteur commodo","price":172.9611,"author":"Mcpherson Matthews","available":true,"date":"1976-09-18"}
 {"index":{"_id":7}}
-{"title":"enim fugiat officia occaecat duis proident","price":179.1719,"authorsName":"Yvette Osborne","available":false,"date":"2014-02-21"}
+{"title":"enim fugiat officia occaecat duis proident","price":179.1719,"author":"Yvette Osborne","available":false,"date":"2014-02-21"}
 {"index":{"_id":8}}
-{"title":"tempor consectetur laboris ut laborum incididunt","price":115.8712,"authorsName":"Jennings Keller","available":false,"date":"1985-11-28"}
+{"title":"tempor consectetur laboris ut laborum incididunt","price":115.8712,"author":"Jennings Keller","available":false,"date":"1985-11-28"}
 {"index":{"_id":9}}
-{"title":"irure est fugiat quis reprehenderit esse","price":173.1195,"authorsName":"Walsh Norton","available":false,"date":"2013-12-19"}
+{"title":"irure est fugiat quis reprehenderit esse","price":173.1195,"author":"Walsh Norton","available":false,"date":"2013-12-19"}
 {"index":{"_id":10}}
-{"title":"sunt id sit duis ullamco veniam","price":49.5798,"authorsName":"Janelle Middleton","available":false,"date":"1989-02-07"}
+{"title":"sunt id sit duis ullamco veniam","price":49.5798,"author":"Janelle Middleton","available":false,"date":"1989-02-07"}
 {"index":{"_id":11}}
-{"title":"ea reprehenderit consectetur duis aute fugiat","price":111.3198,"authorsName":"Traci Mclean","available":true,"date":"2009-03-27"}
+{"title":"ea reprehenderit consectetur duis aute fugiat","price":111.3198,"author":"Traci Mclean","available":true,"date":"2009-03-27"}
 {"index":{"_id":12}}
-{"title":"elit consequat nisi est nulla est","price":37.9667,"authorsName":"Elisabeth Wong","available":true,"date":"2002-02-14"}
+{"title":"elit consequat nisi est nulla est","price":37.9667,"author":"Elisabeth Wong","available":true,"date":"2002-02-14"}
 {"index":{"_id":13}}
-{"title":"eu nisi deserunt voluptate est anim","price":159.3275,"authorsName":"Ana Joyce","available":false,"date":"2000-10-20"}
+{"title":"eu nisi deserunt voluptate est anim","price":159.3275,"author":"Ana Joyce","available":false,"date":"2000-10-20"}
 {"index":{"_id":14}}
-{"title":"aliqua do eiusmod qui reprehenderit aliqua","price":43.4622,"authorsName":"Hines Reeves","available":true,"date":"1993-08-10"}
+{"title":"aliqua do eiusmod qui reprehenderit aliqua","price":43.4622,"author":"Hines Reeves","available":true,"date":"1993-08-10"}
 {"index":{"_id":15}}
-{"title":"cillum incididunt esse do elit sunt","price":140.1977,"authorsName":"Myrtle Ray","available":true,"date":"1997-08-06"}
+{"title":"cillum incididunt esse do elit sunt","price":140.1977,"author":"Myrtle Ray","available":true,"date":"1997-08-06"}
 {"index":{"_id":16}}
-{"title":"commodo ut amet veniam nisi proident","price":65.1081,"authorsName":"Glenda Vinson","available":false,"date":"2000-11-26"}
+{"title":"commodo ut amet veniam nisi proident","price":65.1081,"author":"Glenda Vinson","available":false,"date":"2000-11-26"}
 {"index":{"_id":17}}
-{"title":"non minim commodo voluptate magna consectetur","price":104.3833,"authorsName":"Miles Mayo","available":true,"date":"1979-08-31"}
+{"title":"non minim commodo voluptate magna consectetur","price":104.3833,"author":"Miles Mayo","available":true,"date":"1979-08-31"}
 {"index":{"_id":18}}
-{"title":"Lorem labore ad anim est ut","price":189.54,"authorsName":"Aguilar Downs","available":true,"date":"1974-11-17"}
+{"title":"Lorem labore ad anim est ut","price":189.54,"author":"Aguilar Downs","available":true,"date":"1974-11-17"}
 {"index":{"_id":19}}
-{"title":"eu deserunt commodo sint dolor do","price":97.6843,"authorsName":"Anna Byers","available":true,"date":"1976-01-31"}
+{"title":"eu deserunt commodo sint dolor do","price":97.6843,"author":"Anna Byers","available":true,"date":"1976-01-31"}
 {"index":{"_id":20}}
-{"title":"tempor laboris ea ex proident fugiat","price":137.3987,"authorsName":"Francis Roberts","available":true,"date":"1996-12-10"}
-
+{"title":"tempor laboris ea ex proident fugiat","price":137.3987,"author":"Francis Roberts","available":true,"date":"1996-12-10"}
 ~~~
 
 We search for all the books that have an ebook version available. 
