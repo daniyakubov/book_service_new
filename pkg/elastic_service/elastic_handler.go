@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
+	"github.com/daniyakubov/book_service_n/pkg/consts"
 	errors "github.com/fiverr/go_errors"
 	"github.com/olivere/elastic/v7"
 )
@@ -26,7 +27,7 @@ func NewElasticHandler(ctx *context.Context, url string, client *elastic.Client,
 }
 
 func (e *ElasticHandler) Post(title string, id string) (err error) {
-	_, err = e.Client.Update().Index("books").Id(id).Doc(map[string]interface{}{"title": title}).Do(*e.Ctx)
+	_, err = e.Client.Update().Index(consts.Index).Id(id).Doc(map[string]interface{}{"title": title}).Do(*e.Ctx)
 	if err != nil {
 		return errors.Wrap(err, err.Error())
 	}
@@ -35,7 +36,7 @@ func (e *ElasticHandler) Post(title string, id string) (err error) {
 
 func (e *ElasticHandler) Put(postBody []byte) (string, error) {
 	put, err := e.Client.Index().
-		Index("books").
+		Index(consts.Index).
 		BodyString(string(postBody)).
 		Do(*e.Ctx)
 	if err != nil {
@@ -45,7 +46,7 @@ func (e *ElasticHandler) Put(postBody []byte) (string, error) {
 }
 func (e *ElasticHandler) Get(id string) (src *models.Book, err error) {
 	get, err := e.Client.Get().
-		Index("books").
+		Index(consts.Index).
 		Id(id).
 		Do(*e.Ctx)
 	if err != nil {
@@ -61,7 +62,7 @@ func (e *ElasticHandler) Get(id string) (src *models.Book, err error) {
 
 func (e *ElasticHandler) Delete(id string) error {
 	_, err := e.Client.Delete().
-		Index("books").
+		Index(consts.Index).
 		Id(id).
 		Do(*e.Ctx)
 	if err != nil {
@@ -92,7 +93,7 @@ func (e *ElasticHandler) Search(title string, author string, priceStart float64,
 
 	query := elastic.RawStringQuery(s)
 	searchResult, err := e.Client.Search().
-		Index("books").
+		Index(consts.Index).
 		Query(query).
 		Size(e.maxSizeQuery).
 		Do(context.TODO())
@@ -117,14 +118,14 @@ func (e *ElasticHandler) Search(title string, author string, priceStart float64,
 }
 
 func (e *ElasticHandler) Store() (int64, int, error) {
-	count, err := e.Client.Count("books").Do(context.TODO())
+	count, err := e.Client.Count(consts.Index).Do(context.TODO())
 	if err != nil {
 		return 0, 0, errors.Wrap(err, err.Error())
 	}
 
 	all := elastic.NewMatchAllQuery()
 	cardinalityAgg := elastic.NewCardinalityAggregation().Field("author.keyword")
-	builder := e.Client.Search().Index("books").Query(all).Pretty(true)
+	builder := e.Client.Search().Index(consts.Index).Query(all).Pretty(true)
 	builder = builder.Aggregation("distinctAuthors", cardinalityAgg)
 	searchResult, err := builder.Pretty(true).Do(context.TODO())
 	agg := searchResult.Aggregations
