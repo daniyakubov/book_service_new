@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/daniyakubov/book_service_n/pkg/book_service"
 	"github.com/daniyakubov/book_service_n/pkg/cache"
 	"github.com/daniyakubov/book_service_n/pkg/consts"
@@ -13,13 +12,11 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
 	client, err := elastic.NewClient(elastic.SetURL(consts.BooksUrl))
 	if err != nil {
 		panic(err)
 	}
-	router := gin.Default()
-	eHandler := elastic_service.NewElasticHandler(&ctx, consts.BooksUrl, client, consts.MaxQueryResults)
+	eHandler := elastic_service.NewElasticHandler(consts.BooksUrl, client, consts.MaxQueryResults)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     consts.Host,
 		Password: consts.Password,
@@ -28,12 +25,17 @@ func main() {
 	bookService := book_Service.NewBookService(cache.NewRedisCache(consts.Host, consts.Db, consts.Expiration, consts.MaxActions, redisClient), &eHandler)
 	httpHandler := http_service.NewHttpHandler(bookService)
 
-	router.GET("/book", httpHandler.GetBook)
-	router.DELETE("/book", httpHandler.DeleteBook)
-	router.PUT("/book", httpHandler.PutBook)
-	router.POST("/book", httpHandler.PostBook)
+	router := gin.Default()
+
+	book := router.Group("/book")
+	{
+		book.GET("", httpHandler.GetBook)
+		book.DELETE("", httpHandler.DeleteBook)
+		book.PUT("", httpHandler.PutBook)
+		book.POST("", httpHandler.PostBook)
+	}
 	router.GET("/search", httpHandler.Search)
-	router.GET("/store", httpHandler.Store)
+	router.GET("/store", httpHandler.StoreInfo)
 	router.GET("/activity", httpHandler.Activity)
 
 	err = router.Run(consts.HttpAddress)

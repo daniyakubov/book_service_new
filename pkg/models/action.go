@@ -1,4 +1,4 @@
-package Action
+package models
 
 type Action struct {
 	Method string `json:"method"`

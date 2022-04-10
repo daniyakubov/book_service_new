@@ -1,47 +1,46 @@
 package book_Service
 
 import (
+	"context"
 	"encoding/json"
-	action "github.com/daniyakubov/book_service_n/pkg/action"
-	"github.com/daniyakubov/book_service_n/pkg/book_service/models"
 	"github.com/daniyakubov/book_service_n/pkg/cache"
-	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
+	"github.com/daniyakubov/book_service_n/pkg/db_service"
+	models2 "github.com/daniyakubov/book_service_n/pkg/models"
 	errors "github.com/fiverr/go_errors"
 	"strings"
 )
 
 type BookService struct {
-	booksCache     cache.Cache
-	elasticHandler *elastic_service.ElasticHandler
+	booksCache cache.Cache
+	dbHandler  db_service.DbHandler
 }
 
-func NewBookService(booksCache cache.Cache, elasticHandler *elastic_service.ElasticHandler) BookService {
+func NewBookService(booksCache cache.Cache, dbHandler db_service.DbHandler) BookService {
 	return BookService{
-		booksCache:     booksCache,
-		elasticHandler: elasticHandler,
+		booksCache: booksCache,
+		dbHandler:  dbHandler,
 	}
 }
 
-func (b *BookService) PutBook(req *models.Request) (*models.PutResponse, error) {
+func (b *BookService) AddBook(ctx *context.Context, req *models2.Request) (string, error) {
 	postBody, err := json.Marshal(req.Data)
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return "", errors.Wrap(err, err.Error())
 	}
-	id, err := b.elasticHandler.Put(postBody)
+	id, err := b.dbHandler.Put(ctx, postBody)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	err = b.booksCache.Push(req.Data.Username, "method:Put,"+"route:"+req.Route)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	res := models.PutResponse{id}
-	return &res, nil
+	return id, nil
 }
 
-func (b *BookService) PostBook(req *models.Request) error {
-	err := b.elasticHandler.Post(req.Data.Title, req.Data.Id)
+func (b *BookService) UpdateBook(ctx *context.Context, req *models2.Request) error {
+	err := b.dbHandler.Post(ctx, req.Data.Title, req.Data.Id)
 	if err != nil {
 		return err
 	}
@@ -53,8 +52,8 @@ func (b *BookService) PostBook(req *models.Request) error {
 	return nil
 }
 
-func (b *BookService) GetBook(req *models.Request) (*models.Book, error) {
-	src, err := b.elasticHandler.Get(req.Data.Id)
+func (b *BookService) GetBook(ctx *context.Context, req *models2.Request) (*models2.Book, error) {
+	src, err := b.dbHandler.Get(ctx, req.Data.Id)
 	src.Id = req.Data.Id
 
 	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
@@ -64,8 +63,8 @@ func (b *BookService) GetBook(req *models.Request) (*models.Book, error) {
 	return src, nil
 }
 
-func (b *BookService) DeleteBook(req *models.Request) error {
-	err := b.elasticHandler.Delete(req.Data.Id)
+func (b *BookService) DeleteBook(ctx *context.Context, req *models2.Request) error {
+	err := b.dbHandler.Delete(ctx, req.Data.Id)
 	if err != nil {
 		return err
 	}
@@ -77,8 +76,8 @@ func (b *BookService) DeleteBook(req *models.Request) error {
 	return nil
 }
 
-func (b *BookService) Search(req *models.Request) ([]models.Book, error) {
-	res, err := b.elasticHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
+func (b *BookService) Search(req *models2.Request) ([]models2.Book, error) {
+	res, err := b.dbHandler.Search(req.Data.Title, req.Data.Author, req.Data.PriceStart, req.Data.PriceEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -90,23 +89,28 @@ func (b *BookService) Search(req *models.Request) ([]models.Book, error) {
 	return res, nil
 }
 
-func (b *BookService) Store(req *models.Request) (*models.StoreResponse, error) {
-	count, distinctAuth, err := b.elasticHandler.Store()
+func (b *BookService) StoreInfo(req *models2.Request) (*models2.StoreResponse, error) {
+	count, distinctAuth, err := b.dbHandler.StoreInfo()
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
 
-	resp := models.StoreResponse{count, distinctAuth}
+	resp := models2.StoreResponse{count, distinctAuth}
+
+	err = b.booksCache.Push(req.Data.Username, "method:Get,"+"route:"+req.Route)
+	if err != nil {
+		return nil, err
+	}
 	return &resp, nil
 }
 
-func (b *BookService) Activity(username string) ([]action.Action, error) {
+func (b *BookService) Activity(username string) ([]models2.Action, error) {
 	actions, err := b.booksCache.Get(username)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []action.Action = make([]action.Action, int(len(actions)))
+	res := make([]models2.Action, int(len(actions)))
 	for i := 0; i < len(actions); i++ {
 		s := strings.Split(actions[i], ",")
 		method := strings.Split(s[0], ":")[1]

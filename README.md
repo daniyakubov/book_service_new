@@ -166,7 +166,7 @@ We search for all the books that have an ebook version available.
 GET books/_search
 {
   "query": {
-    "constant_score": {
+    "bool": {
       "filter": {
         "term": {
           "available": true
@@ -183,7 +183,7 @@ We search for all the books that don’t have an ebook version available.
 GET books/_search
 {
   "query": {
-    "constant_score": {
+    "bool": {
       "filter": {
         "term": {
           "available": false
@@ -215,7 +215,7 @@ We get all the books that are priced between 10 to 50 dollars or 100 to 200 doll
 GET books/_search
 {
   "query": {
-    "constant_score": {
+    "bool": {
       "filter": {
         "bool": {
           "should": [
@@ -263,7 +263,7 @@ GET books/_search
 {
     "size" : 0,
     "aggs" : {
-        "median price" : {
+        "get upper 10% price" : {
             "percentiles" : {
                 "field" : "price",
                 "percents" : 50

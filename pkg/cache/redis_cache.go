@@ -59,5 +59,6 @@ func (cache *RedisCache) Get(key string) ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())
 	}
+
 	return actions, nil
 }
