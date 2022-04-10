@@ -97,12 +97,12 @@ func (h *HttpHandler) Search(c *gin.Context) {
 func (h *HttpHandler) StoreInfo(c *gin.Context) {
 	var book models.UserBook
 	book.Username = c.Query(consts.UserName)
-	s, err := h.bookService.StoreInfo(&book, c.FullPath())
+	count, distinctAuthors, err := h.bookService.StoreInfo(&book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, s)
+	c.JSON(http.StatusOK, gin.H{"books_num": count, "distinct_authors_num": distinctAuthors})
 }
 
 func (h *HttpHandler) Activity(c *gin.Context) {

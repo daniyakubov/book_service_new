@@ -90,19 +90,17 @@ func (b *BookService) Search(userBook *models.UserBook, route string, priceRange
 	return res, nil
 }
 
-func (b *BookService) StoreInfo(userBook *models.UserBook, route string) (*models.StoreResponse, error) {
+func (b *BookService) StoreInfo(userBook *models.UserBook, route string) (int64, int, error) {
 	count, distinctAuth, err := b.dbHandler.StoreInfo()
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return 0, 0, errors.Wrap(err, err.Error())
 	}
-
-	resp := models.StoreResponse{count, distinctAuth}
 
 	err = b.booksCache.Push(userBook.Username, "method:Get,"+"route:"+route)
 	if err != nil {
-		return nil, err
+		return 0, 0, err
 	}
-	return &resp, nil
+	return count, distinctAuth, nil
 }
 
 func (b *BookService) Activity(username string) ([]models.Action, error) {

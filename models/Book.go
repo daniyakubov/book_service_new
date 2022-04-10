@@ -19,23 +19,6 @@ type UserBook struct {
 	Username  string  `json:"username"`
 }
 
-type RHit struct {
-	Index  string  `json:"_index"`
-	Type   string  `json:"_type"`
-	Id     string  `json:"_id"`
-	Score  float64 `json:"_score"`
-	Source Book    `json:"_source"`
-}
-
-type StoreResponse struct {
-	Count       int64 `json:"books_num"`
-	DistinctAut int   `json:"distinct_authors_num"`
-}
-
-type PutResponse struct {
-	Id string `json:"id"`
-}
-
 func GetBookFromUser(userBook *UserBook) (book Book) {
 	book.Id = userBook.Id
 	book.Title = userBook.Title
