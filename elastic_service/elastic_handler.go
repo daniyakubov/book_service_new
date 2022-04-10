@@ -3,11 +3,14 @@ package elastic_service
 import (
 	"context"
 	"encoding/json"
-	"github.com/daniyakubov/book_service_n/pkg/consts"
-	"github.com/daniyakubov/book_service_n/pkg/db_service"
-	"github.com/daniyakubov/book_service_n/pkg/models"
+	"github.com/daniyakubov/book_service_n/config"
+	"github.com/daniyakubov/book_service_n/consts"
+	"github.com/daniyakubov/book_service_n/db_service"
+	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
 	"github.com/olivere/elastic/v7"
+	"strconv"
+	"strings"
 )
 
 var _ db_service.DbHandler = &ElasticHandler{}
@@ -91,9 +94,20 @@ func buildQueryForSearch(client *elastic.Client, title string, author string, pr
 	return builder
 }
 
-func (e *ElasticHandler) Search(title string, author string, priceStart float64, priceEnd float64) (res []models.Book, err error) {
+func (e *ElasticHandler) Search(title string, author string, priceRange string) (res []models.Book, err error) {
+	var priceStart float64
+	var priceEnd float64
+	if priceRange == "" {
+		priceStart = 0
+		priceEnd = 0
+	} else {
+		priceSplit := strings.Split(priceRange, "-")
+		priceStart, _ = strconv.ParseFloat(priceSplit[0], 32)
+		priceEnd, _ = strconv.ParseFloat(priceSplit[1], 32)
+	}
+
 	builder := buildQueryForSearch(e.Client, title, author, priceStart, priceEnd)
-	searchResult, err := builder.Pretty(true).Size(consts.MaxQueryResults).Do(context.TODO())
+	searchResult, err := builder.Pretty(true).Size(config.MaxQueryResults).Do(context.TODO())
 
 	if err != nil {
 		return nil, errors.Wrap(err, err.Error())

@@ -2,13 +2,11 @@ package http_service
 
 import (
 	"context"
-	"github.com/daniyakubov/book_service_n/pkg/book_service"
-	"github.com/daniyakubov/book_service_n/pkg/consts"
-	models2 "github.com/daniyakubov/book_service_n/pkg/models"
+	"github.com/daniyakubov/book_service_n/book_service"
+	"github.com/daniyakubov/book_service_n/consts"
+	"github.com/daniyakubov/book_service_n/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 type HttpHandler struct {
@@ -23,14 +21,13 @@ func NewHttpHandler(bookService book_Service.BookService) HttpHandler {
 
 func (h *HttpHandler) PutBook(c *gin.Context) {
 	ctx := context.Background()
-	var hit models2.Hit
-	err := c.Bind(&hit)
+	var book models.UserBook
+	err := c.Bind(&book)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	r := models2.NewRequest(&hit, c.FullPath())
-	id, err := h.bookService.AddBook(&ctx, &r)
+	id, err := h.bookService.AddBook(&ctx, &book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -41,15 +38,14 @@ func (h *HttpHandler) PutBook(c *gin.Context) {
 
 func (h *HttpHandler) PostBook(c *gin.Context) {
 	ctx := context.Background()
-	var hit models2.Hit
-	err := c.Bind(&hit)
+	var book models.UserBook
+	err := c.Bind(&book)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	r := models2.NewRequest(&hit, c.FullPath())
-	err = h.bookService.UpdateBook(&ctx, &r)
+	err = h.bookService.UpdateBook(&ctx, &book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -58,12 +54,11 @@ func (h *HttpHandler) PostBook(c *gin.Context) {
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
 	ctx := context.Background()
-	var hit models2.Hit
-	hit.Id = c.Query(consts.Id)
-	hit.Username = c.Query(consts.UserName)
+	var book models.UserBook
+	book.Id = c.Query(consts.Id)
+	book.Username = c.Query(consts.UserName)
 
-	r := models2.NewRequest(&hit, c.FullPath())
-	s, err := h.bookService.GetBook(&ctx, &r)
+	s, err := h.bookService.GetBook(&ctx, &book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -73,12 +68,11 @@ func (h *HttpHandler) GetBook(c *gin.Context) {
 
 func (h *HttpHandler) DeleteBook(c *gin.Context) {
 	ctx := context.Background()
-	var hit models2.Hit
-	hit.Id = c.Query(consts.Id)
-	hit.Username = c.Query(consts.UserName)
+	var book models.UserBook
+	book.Id = c.Query(consts.Id)
+	book.Username = c.Query(consts.UserName)
 
-	r := models2.NewRequest(&hit, c.FullPath())
-	err := h.bookService.DeleteBook(&ctx, &r)
+	err := h.bookService.DeleteBook(&ctx, &book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -86,22 +80,13 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) Search(c *gin.Context) {
-	var hit models2.Hit
-	hit.Title = c.Query(consts.Title)
-	hit.Author = c.Query(consts.Author)
-	sRange := c.Query(consts.PriceRange)
-	if sRange == "" {
-		hit.PriceStart = 0
-		hit.PriceEnd = 0
-	} else {
-		priceRange := strings.Split(sRange, "-")
-		hit.PriceStart, _ = strconv.ParseFloat(priceRange[0], 32)
-		hit.PriceEnd, _ = strconv.ParseFloat(priceRange[1], 32)
-	}
-	hit.Username = c.Query(consts.UserName)
+	var book models.UserBook
+	book.Title = c.Query(consts.Title)
+	book.Author = c.Query(consts.Author)
+	priceRange := c.Query(consts.PriceRange)
+	book.Username = c.Query(consts.UserName)
 
-	r := models2.NewRequest(&hit, c.FullPath())
-	s, err := h.bookService.Search(&r)
+	s, err := h.bookService.Search(&book, c.FullPath(), priceRange)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -110,10 +95,9 @@ func (h *HttpHandler) Search(c *gin.Context) {
 }
 
 func (h *HttpHandler) StoreInfo(c *gin.Context) {
-	var hit models2.Hit
-	hit.Username = c.Query(consts.UserName)
-	r := models2.NewRequest(&hit, c.FullPath())
-	s, err := h.bookService.StoreInfo(&r)
+	var book models.UserBook
+	book.Username = c.Query(consts.UserName)
+	s, err := h.bookService.StoreInfo(&book, c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

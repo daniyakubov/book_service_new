@@ -1,13 +1,6 @@
-package consts
+package config
 
 const (
-	UserName        = "username"
-	Id              = "id"
-	Author          = "author"
-	Title           = "title"
-	Index           = "books"
-	Price           = "price"
-	PriceRange      = "price_range"
 	Host            = "localhost:6379"
 	Db              = 0
 	Password        = ""

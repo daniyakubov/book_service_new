@@ -1,28 +1,28 @@
 package main
 
 import (
-	"github.com/daniyakubov/book_service_n/pkg/book_service"
-	"github.com/daniyakubov/book_service_n/pkg/cache"
-	"github.com/daniyakubov/book_service_n/pkg/consts"
-	"github.com/daniyakubov/book_service_n/pkg/elastic_service"
-	"github.com/daniyakubov/book_service_n/pkg/http_service"
+	"github.com/daniyakubov/book_service_n/book_service"
+	"github.com/daniyakubov/book_service_n/cache"
+	"github.com/daniyakubov/book_service_n/config"
+	"github.com/daniyakubov/book_service_n/elastic_service"
+	"github.com/daniyakubov/book_service_n/http_service"
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
 	"gopkg.in/redis.v5"
 )
 
 func main() {
-	client, err := elastic.NewClient(elastic.SetURL(consts.BooksUrl))
+	client, err := elastic.NewClient(elastic.SetURL(config.BooksUrl))
 	if err != nil {
 		panic(err)
 	}
-	eHandler := elastic_service.NewElasticHandler(consts.BooksUrl, client, consts.MaxQueryResults)
+	eHandler := elastic_service.NewElasticHandler(config.BooksUrl, client, config.MaxQueryResults)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     consts.Host,
-		Password: consts.Password,
-		DB:       consts.Db,
+		Addr:     config.Host,
+		Password: config.Password,
+		DB:       config.Db,
 	})
-	bookService := book_Service.NewBookService(cache.NewRedisCache(consts.Host, consts.Db, consts.Expiration, consts.MaxActions, redisClient), &eHandler)
+	bookService := book_Service.NewBookService(cache.NewRedisCache(config.Host, config.Db, config.Expiration, config.MaxActions, redisClient), &eHandler)
 	httpHandler := http_service.NewHttpHandler(bookService)
 
 	router := gin.Default()
@@ -38,7 +38,7 @@ func main() {
 	router.GET("/store", httpHandler.StoreInfo)
 	router.GET("/activity", httpHandler.Activity)
 
-	err = router.Run(consts.HttpAddress)
+	err = router.Run(config.HttpAddress)
 	if err != nil {
 		panic(err)
 	}

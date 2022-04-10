@@ -1,6 +1,6 @@
 package models
 
-type Hit struct {
+/*type Hit struct {
 	Id         string
 	Title      string  `json:"title"`
 	Author     string  `json:"author"`
@@ -10,4 +10,4 @@ type Hit struct {
 	Username   string  `json:"username"`
 	PriceStart float64
 	PriceEnd   float64
-}
+}*/
