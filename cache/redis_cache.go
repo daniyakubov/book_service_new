@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"fmt"
+	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
 	"gopkg.in/redis.v5"
+	"strings"
 	"time"
 )
 
@@ -33,11 +36,13 @@ func (cache *RedisCache) getClient() *redis.Client {
 	})
 }
 
-func (cache *RedisCache) Push(key string, value string) error {
+func (cache *RedisCache) Push(key string, method string, route string) error {
 	length, err := cache.client.LLen(key).Result()
 	if err != nil {
 		panic(err)
 	}
+
+	value := fmt.Sprintf("method: %s, route: %s", method, route)
 
 	cache.client.RPush(key, value)
 
@@ -50,7 +55,7 @@ func (cache *RedisCache) Push(key string, value string) error {
 	return nil
 }
 
-func (cache *RedisCache) Get(key string) ([]string, error) {
+func (cache *RedisCache) Get(key string) ([]models.Action, error) {
 	length, err := cache.client.LLen(key).Result()
 	if err != nil {
 		panic(err)
@@ -60,5 +65,14 @@ func (cache *RedisCache) Get(key string) ([]string, error) {
 		return nil, errors.Wrap(err, err.Error())
 	}
 
-	return actions, nil
+	res := make([]models.Action, int(len(actions)))
+	for i := 0; i < len(actions); i++ {
+		s := strings.Split(actions[i], ",")
+		method := strings.Split(s[0], ":")[1]
+		route := strings.Split(s[1], ":")[1]
+		res[i].Method = method
+		res[i].Route = route
+	}
+
+	return res, nil
 }

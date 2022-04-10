@@ -7,7 +7,6 @@ import (
 	"github.com/daniyakubov/book_service_n/db_service"
 	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
-	"strings"
 )
 
 type BookService struct {
@@ -33,7 +32,7 @@ func (b *BookService) AddBook(ctx *context.Context, userBook *models.UserBook, r
 		return "", err
 	}
 
-	err = b.booksCache.Push(userBook.Username, "method:Put,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Put", route)
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +45,7 @@ func (b *BookService) UpdateBook(ctx *context.Context, userBook *models.UserBook
 		return err
 	}
 
-	err = b.booksCache.Push(userBook.Username, "method:Post,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Post", "route")
 	if err != nil {
 		return err
 	}
@@ -57,7 +56,7 @@ func (b *BookService) GetBook(ctx *context.Context, userBook *models.UserBook, r
 	src, err := b.dbHandler.Get(ctx, userBook.Id)
 	src.Id = userBook.Id
 
-	err = b.booksCache.Push(userBook.Username, "method:Get,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Get", route)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func (b *BookService) DeleteBook(ctx *context.Context, userBook *models.UserBook
 		return err
 	}
 
-	err = b.booksCache.Push(userBook.Username, "method:Delete,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Delete", route)
 	if err != nil {
 		return err
 	}
@@ -83,7 +82,7 @@ func (b *BookService) Search(userBook *models.UserBook, route string, priceRange
 		return nil, err
 	}
 
-	err = b.booksCache.Push(userBook.Username, "method:Get,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Get", route)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func (b *BookService) StoreInfo(userBook *models.UserBook, route string) (int64,
 		return 0, 0, errors.Wrap(err, err.Error())
 	}
 
-	err = b.booksCache.Push(userBook.Username, "method:Get,"+"route:"+route)
+	err = b.booksCache.Push(userBook.Username, "Get", route)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -109,13 +108,5 @@ func (b *BookService) Activity(username string) ([]models.Action, error) {
 		return nil, err
 	}
 
-	res := make([]models.Action, int(len(actions)))
-	for i := 0; i < len(actions); i++ {
-		s := strings.Split(actions[i], ",")
-		method := strings.Split(s[0], ":")[1]
-		route := strings.Split(s[1], ":")[1]
-		res[i].Method = method
-		res[i].Route = route
-	}
-	return res, nil
+	return actions, nil
 }

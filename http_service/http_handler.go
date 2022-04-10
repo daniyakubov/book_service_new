@@ -114,3 +114,16 @@ func (h *HttpHandler) Activity(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, s)
 }
+
+func (h *HttpHandler) ApplyRoutes(router *gin.Engine) {
+	book := router.Group("/book")
+	{
+		book.GET("", h.GetBook)
+		book.DELETE("", h.DeleteBook)
+		book.PUT("", h.PutBook)
+		book.POST("", h.PostBook)
+	}
+	router.GET("/search", h.Search)
+	router.GET("/store", h.StoreInfo)
+	router.GET("/activity", h.Activity)
+}

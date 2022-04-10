@@ -26,17 +26,7 @@ func main() {
 	httpHandler := http_service.NewHttpHandler(bookService)
 
 	router := gin.Default()
-
-	book := router.Group("/book")
-	{
-		book.GET("", httpHandler.GetBook)
-		book.DELETE("", httpHandler.DeleteBook)
-		book.PUT("", httpHandler.PutBook)
-		book.POST("", httpHandler.PostBook)
-	}
-	router.GET("/search", httpHandler.Search)
-	router.GET("/store", httpHandler.StoreInfo)
-	router.GET("/activity", httpHandler.Activity)
+	httpHandler.ApplyRoutes(router)
 
 	err = router.Run(config.HttpAddress)
 	if err != nil {
