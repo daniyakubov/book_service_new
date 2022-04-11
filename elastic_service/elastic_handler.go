@@ -29,7 +29,7 @@ func NewElasticHandler(url string, client *elastic.Client, maxSizeQuery int) Ela
 	}
 }
 
-func (e *ElasticHandler) Post(ctx *context.Context, title string, id string) (err error) {
+func (e *ElasticHandler) Update(ctx *context.Context, title string, id string) (err error) {
 	_, err = e.Client.Update().
 		Index(consts.Index).
 		Id(id).
@@ -41,15 +41,15 @@ func (e *ElasticHandler) Post(ctx *context.Context, title string, id string) (er
 	return nil
 }
 
-func (e *ElasticHandler) Put(ctx *context.Context, postBody []byte) (string, error) {
-	put, err := e.Client.Index().
+func (e *ElasticHandler) Add(ctx *context.Context, body []byte) (string, error) {
+	res, err := e.Client.Index().
 		Index(consts.Index).
-		BodyString(string(postBody)).
+		BodyString(string(body)).
 		Do(*ctx)
 	if err != nil {
 		return "", errors.Wrap(err, err.Error())
 	}
-	return put.Id, err
+	return res.Id, err
 }
 func (e *ElasticHandler) Get(ctx *context.Context, id string) (src *models.Book, err error) {
 	get, err := e.Client.Get().

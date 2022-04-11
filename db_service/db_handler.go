@@ -6,8 +6,8 @@ import (
 )
 
 type DbHandler interface {
-	Post(ctx *context.Context, title string, id string) error
-	Put(ctx *context.Context, postBody []byte) (string, error)
+	Update(ctx *context.Context, title string, id string) error
+	Add(ctx *context.Context, body []byte) (string, error)
 	Get(ctx *context.Context, id string) (*models.Book, error)
 	Delete(ctx *context.Context, id string) error
 	Search(title string, author string, priceRange string) ([]models.Book, error)
