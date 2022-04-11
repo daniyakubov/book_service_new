@@ -11,7 +11,7 @@ import (
 
 type BookService struct {
 	booksCache cache.Cache
-	dbHandler  db_service.DbHandler
+	dbHandler  db_service.DBHandler
 }
 
 func NewBookService(booksCache cache.Cache, dbHandler db_service.DbHandler) BookService {
