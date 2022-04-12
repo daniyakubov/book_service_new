@@ -36,20 +36,16 @@ func (cache *RedisCache) getClient() *redis.Client {
 	})
 }
 
-func (cache *RedisCache) Push(key string, method string, route string) error {
+func (cache *RedisCache) AddAction(key string, method string, routeName string) error {
 	length, err := cache.client.LLen(key).Result()
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, fmt.Sprintf("failded to get length of actions of username %s", key))
 	}
-
-	value := fmt.Sprintf("method: %s, route: %s", method, route)
-
-	cache.client.RPush(key, value)
-
+	cache.client.RPush(key, fmt.Sprintf("method: %s, route: %s", method, routeName))
 	if length >= cache.maxSize {
 		_, err := cache.client.LPop(key).Result()
 		if err != nil {
-			return errors.Wrap(err, err.Error())
+			return errors.Wrap(err, fmt.Sprintf("failded to update action of username %s", key))
 		}
 	}
 	return nil
@@ -60,18 +56,18 @@ func (cache *RedisCache) Get(key string) ([]models.Action, error) {
 	if err != nil {
 		panic(err)
 	}
-	actions, err := cache.client.LRange(key, 0, length).Result()
+	items, err := cache.client.LRange(key, 0, length).Result()
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return nil, errors.Wrap(err, fmt.Sprintf("failded to get actions of username %s", key))
 	}
 
-	res := make([]models.Action, int(len(actions)))
-	for i := 0; i < len(actions); i++ {
-		s := strings.Split(actions[i], ",")
+	res := make([]models.Action, len(items))
+	for i := 0; i < len(items); i++ {
+		s := strings.Split(items[i], ",")
 		method := strings.Split(s[0], ":")[1]
-		route := strings.Split(s[1], ":")[1]
+		routeName := strings.Split(s[1], ":")[1]
 		res[i].Method = method
-		res[i].Route = route
+		res[i].RouteName = routeName
 	}
 
 	return res, nil

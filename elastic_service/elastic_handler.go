@@ -3,6 +3,7 @@ package elastic_service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/daniyakubov/book_service_n/config"
 	"github.com/daniyakubov/book_service_n/consts"
 	"github.com/daniyakubov/book_service_n/db_service"
@@ -13,140 +14,145 @@ import (
 	"strings"
 )
 
-var _ db_service.DbHandler = &ElasticHandler{}
+var _ db_service.DBHandler = &ElasticHandler{}
 
 type ElasticHandler struct {
-	Url          string
-	Client       *elastic.Client
-	maxSizeQuery int
+	Client *elastic.Client
 }
 
-func NewElasticHandler(url string, client *elastic.Client, maxSizeQuery int) ElasticHandler {
+func NewElasticHandler(client *elastic.Client) ElasticHandler {
 	return ElasticHandler{
-		url,
 		client,
-		maxSizeQuery,
 	}
 }
 
-func (e *ElasticHandler) Update(ctx *context.Context, title string, id string) (err error) {
+func (e *ElasticHandler) UpdateBook(ctx *context.Context, title string, id string) (err error) {
 	_, err = e.Client.Update().
 		Index(consts.Index).
 		Id(id).
 		Doc(map[string]interface{}{consts.Title: title}).
 		Do(*ctx)
 	if err != nil {
-		return errors.Wrap(err, err.Error())
+		return errors.Wrap(err, fmt.Sprintf("couldn't update book with title %s and id %s", title, id))
 	}
 	return nil
 }
 
-func (e *ElasticHandler) Add(ctx *context.Context, body []byte) (string, error) {
+func (e *ElasticHandler) AddBook(ctx *context.Context, body []byte) (string, error) {
 	res, err := e.Client.Index().
 		Index(consts.Index).
 		BodyString(string(body)).
 		Do(*ctx)
 	if err != nil {
-		return "", errors.Wrap(err, err.Error())
+		return "", errors.Wrap(err, fmt.Sprintf("couldn't update book with body: %s", string(body)))
 	}
 	return res.Id, err
 }
-func (e *ElasticHandler) Get(ctx *context.Context, id string) (src *models.Book, err error) {
+func (e *ElasticHandler) GetBook(ctx *context.Context, id string) (src *models.Book, err error) {
 	get, err := e.Client.Get().
 		Index(consts.Index).
 		Id(id).
 		Do(*ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return nil, errors.Wrap(err, fmt.Sprintf("couldn't get book form server with id: %s", id))
 	}
 
 	var book models.Book
 	if err = json.Unmarshal(get.Source, &book); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, fmt.Sprintf("couldn't unmarshal result of book with id: %s, in getBoook function ", id))
 	}
 	return &book, err
 }
 
-func (e *ElasticHandler) Delete(ctx *context.Context, id string) error {
+func (e *ElasticHandler) DeleteBook(ctx *context.Context, id string) error {
 	_, err := e.Client.Delete().
 		Index(consts.Index).
 		Id(id).
 		Do(*ctx)
 	if err != nil {
-		return errors.Wrap(err, err.Error())
+		return errors.Wrap(err, fmt.Sprintf("couldn't delete book with id: %s", id))
 	}
 	return err
 }
 
-func buildQueryForSearch(client *elastic.Client, title string, author string, priceStart float64, priceEnd float64) *elastic.SearchService {
+func buildSearchQuery(client *elastic.Client, title string, author string, priceRange string) (s *elastic.SearchService, err error) {
+
+	var from, to int
+	if priceRange != "" {
+		priceSplit := strings.Split(priceRange, "-")
+		if len(priceSplit) != 2 {
+			return nil, errors.New("failed to pars `price_range` field")
+		}
+		if from, err = strconv.Atoi(priceSplit[0]); err != nil {
+			return nil, errors.New("failed to pars `price_range` field")
+		}
+		if to, err = strconv.Atoi(priceSplit[1]); err != nil {
+			return nil, errors.New("failed to pars `price_range` field")
+		}
+	}
+
 	all := elastic.NewMatchAllQuery()
 	builder := client.Search().Index(consts.Index).Query(all).Pretty(true)
+	q := elastic.NewBoolQuery()
 
 	if title != "" {
-		builder = builder.Query(elastic.NewBoolQuery().Must(elastic.NewTermQuery(consts.Title, title)))
+		q.Must(elastic.NewMatchQuery(consts.Title, title))
 	}
 	if author != "" {
-		builder = builder.Query(elastic.NewBoolQuery().Must(elastic.NewTermQuery(consts.Author, author)))
+		q.Must(elastic.NewMatchQuery(consts.Author, author))
 	}
-	if priceEnd != 0 {
-		builder = builder.Query(elastic.NewRangeQuery(consts.Price).From(priceStart).To(priceEnd))
+	if to != 0 {
+		q.Must(elastic.NewRangeQuery(consts.Price).From(from).To(to))
 	}
-	return builder
+	builder = builder.Query(q)
+	return builder, nil
 }
 
 func (e *ElasticHandler) Search(title string, author string, priceRange string) (res []models.Book, err error) {
-	var priceStart float64
-	var priceEnd float64
-	if priceRange == "" {
-		priceStart = 0
-		priceEnd = 0
-	} else {
-		priceSplit := strings.Split(priceRange, "-")
-		priceStart, _ = strconv.ParseFloat(priceSplit[0], 32)
-		priceEnd, _ = strconv.ParseFloat(priceSplit[1], 32)
-	}
 
-	builder := buildQueryForSearch(e.Client, title, author, priceStart, priceEnd)
+	builder, err := buildSearchQuery(e.Client, title, author, priceRange)
+	if err != nil {
+		return nil, err
+	}
 	searchResult, err := builder.Pretty(true).Size(config.MaxQueryResults).Do(context.TODO())
 
 	if err != nil {
-		return nil, errors.Wrap(err, err.Error())
+		return nil, errors.Wrap(err, fmt.Sprintf("search failed for title: %s, author: %s, priceRange: %s", title, author, priceRange))
 	}
-	if searchResult.Hits == nil {
-		return nil, errors.New("expected SearchResult.Hits != nil; got nil")
-	}
-
-	for _, s := range searchResult.Hits.Hits {
-		var src models.Book
-		if err := json.Unmarshal(s.Source, &src); err != nil {
-			return nil, errors.Wrap(err, err.Error())
+	res = []models.Book{}
+	for _, hit := range searchResult.Hits.Hits {
+		var book models.Book
+		if err := json.Unmarshal(hit.Source, &book); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("unmarshaling in search failed for title: %s, author: %s, priceRange: %s", title, author, priceRange))
 		}
-		src.Id = s.Id
-		res = append(res, src)
+		book.Id = hit.Id
+		res = append(res, book)
 	}
 	return res, err
 }
 
-func (e *ElasticHandler) StoreInfo() (int64, int, error) {
-	all := elastic.NewMatchAllQuery()
+func (e *ElasticHandler) StoreInfo() (info map[string]interface{}, err error) {
 	cardinalityAgg := elastic.NewCardinalityAggregation().Field("author.keyword")
-	builder := e.Client.Search().Index(consts.Index).Query(all).Pretty(true)
+	builder := e.Client.Search().Index(consts.Index).Size(0)
 	builder = builder.Aggregation("distinctAuthors", cardinalityAgg)
 	searchResult, err := builder.Pretty(true).Do(context.TODO())
 	if err != nil {
-		return 0, 0, errors.Wrap(err, err.Error())
+		return nil, errors.Wrap(err, "store information retrieval failed ")
 	}
 	agg := searchResult.Aggregations
 	if agg == nil {
-		return 0, 0, errors.New("agg returned nil")
+		return nil, errors.New("agg returned nil in store information function")
 	}
+
 	agg2, found := agg.Cardinality("distinctAuthors")
 	if !found {
-		return 0, 0, errors.New("not found")
+		return nil, errors.New("aggregation was not found for distinct authors in store information function")
 	}
 	if agg2 == nil || agg2.Value == nil {
-		return 0, 0, errors.New("expected != nil; got: nil")
+		return nil, errors.New("aggregation was nil for distinct authors in store information function")
 	}
-	booksNum := searchResult.Hits.TotalHits.Value
-	return booksNum, int(*agg2.Value), nil
+	info = make(map[string]interface{})
+	info["books_num"] = searchResult.Hits.TotalHits.Value
+	info["distinct_authors_num"] = int(*agg2.Value)
+	return info, nil
 }

@@ -2,12 +2,15 @@ package http_service
 
 import (
 	"context"
+	"github.com/daniyakubov/book_service_n/app_service"
 	"github.com/daniyakubov/book_service_n/book_service"
 	"github.com/daniyakubov/book_service_n/consts"
 	"github.com/daniyakubov/book_service_n/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
+
+var _ app_service.AppHandler = &HttpHandler{}
 
 type HttpHandler struct {
 	bookService book_Service.BookService
@@ -22,8 +25,7 @@ func NewHttpHandler(bookService book_Service.BookService) HttpHandler {
 func (h *HttpHandler) AddBook(c *gin.Context) {
 	ctx := context.Background()
 	var book models.Book
-	err := c.Bind(&book)
-	if err != nil {
+	if err := c.Bind(&book); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -45,7 +47,7 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	err = h.bookService.UpdateBook(&ctx, &book, c.Query(consts.UserName), c.FullPath())
+	err = h.bookService.UpdateBook(&ctx, book.Title, book.Id, c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -54,10 +56,8 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
 	ctx := context.Background()
-	var book models.Book
-	book.Id = c.Query(consts.Id)
 
-	s, err := h.bookService.GetBook(&ctx, &book, c.Query(consts.UserName), c.FullPath())
+	s, err := h.bookService.GetBook(&ctx, c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -67,36 +67,31 @@ func (h *HttpHandler) GetBook(c *gin.Context) {
 
 func (h *HttpHandler) DeleteBook(c *gin.Context) {
 	ctx := context.Background()
-	var book models.Book
-	book.Id = c.Query(consts.Id)
-	err := h.bookService.DeleteBook(&ctx, &book, c.Query(consts.UserName), c.FullPath())
+	err := h.bookService.DeleteBook(&ctx, c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	return
 }
 
 func (h *HttpHandler) Search(c *gin.Context) {
-	var book models.Book
-	book.Title = c.Query(consts.Title)
-	book.Author = c.Query(consts.Author)
-	priceRange := c.Query(consts.PriceRange)
-
-	s, err := h.bookService.Search(&book, c.Query(consts.UserName), c.FullPath(), priceRange)
+	s, err := h.bookService.Search(c.Query(consts.Title), c.Query(consts.Author), c.Query(consts.UserName), c.FullPath(), c.Query(consts.PriceRange))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, s)
 }
 
 func (h *HttpHandler) StoreInfo(c *gin.Context) {
-	count, distinctAuthors, err := h.bookService.StoreInfo(c.Query(consts.UserName), c.FullPath())
+	info, err := h.bookService.StoreInfo(c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"books_num": count, "distinct_authors_num": distinctAuthors})
+	c.JSON(http.StatusOK, gin.H{"books_num": info["books_num"], "distinct_authors_num": info["distinct_authors_num"]})
 }
 
 func (h *HttpHandler) Activity(c *gin.Context) {
@@ -106,17 +101,4 @@ func (h *HttpHandler) Activity(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, s)
-}
-
-func (h *HttpHandler) ApplyRoutes(router *gin.Engine) {
-	book := router.Group("/book")
-	{
-		book.GET("", h.GetBook)
-		book.DELETE("", h.DeleteBook)
-		book.PUT("", h.AddBook)
-		book.POST("", h.UpdateBook)
-	}
-	router.GET("/search", h.Search)
-	router.GET("/store", h.StoreInfo)
-	router.GET("/activity", h.Activity)
 }
