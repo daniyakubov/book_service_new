@@ -31,7 +31,7 @@ type username struct {
 func (h *HttpHandler) AddBook(c *gin.Context) {
 	var book models.Book
 	if err := c.ShouldBindBodyWith(&book, binding.JSON); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, "error: couldn't bind body in AddBook request")
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 	var book models.Book
 	err := c.ShouldBindBodyWith(&book, binding.JSON)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, "error: couldn't bind body in UpdateBook request")
 		return
 	}
 
@@ -122,7 +122,7 @@ func (h *HttpHandler) AddAction(c *gin.Context) {
 
 	if c.Request.Method == "PUT" || c.Request.Method == "POST" {
 		if err := c.ShouldBindBodyWith(&un, binding.JSON); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, "error: couldn't bind body in Activity request")
 			return
 		}
 	}
