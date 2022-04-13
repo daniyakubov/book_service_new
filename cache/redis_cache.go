@@ -41,6 +41,7 @@ func (cache *RedisCache) AddAction(key string, method string, routeName string) 
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failded to get length of actions of username %s", key))
 	}
+
 	cache.client.RPush(key, fmt.Sprintf("method: %s, route: %s", method, routeName))
 	if length >= cache.maxSize {
 		_, err := cache.client.LPop(key).Result()
@@ -48,10 +49,11 @@ func (cache *RedisCache) AddAction(key string, method string, routeName string) 
 			return errors.Wrap(err, fmt.Sprintf("failded to update action of username %s", key))
 		}
 	}
+
 	return nil
 }
 
-func (cache *RedisCache) Get(key string) ([]models.Action, error) {
+func (cache *RedisCache) GetLastActions(key string) ([]models.Action, error) {
 	length, err := cache.client.LLen(key).Result()
 	if err != nil {
 		panic(err)

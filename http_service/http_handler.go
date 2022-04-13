@@ -23,13 +23,12 @@ func NewHttpHandler(bookService book_Service.BookService) HttpHandler {
 }
 
 func (h *HttpHandler) AddBook(c *gin.Context) {
-	ctx := context.Background()
 	var book models.Book
 	if err := c.Bind(&book); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	id, err := h.bookService.AddBook(&ctx, &book, c.Query(consts.UserName), c.FullPath())
+	id, err := h.bookService.AddBook(context.Background(), &book, c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -39,7 +38,6 @@ func (h *HttpHandler) AddBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) UpdateBook(c *gin.Context) {
-	ctx := context.Background()
 	var book models.Book
 	err := c.Bind(&book)
 	if err != nil {
@@ -47,7 +45,7 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	err = h.bookService.UpdateBook(&ctx, book.Title, book.Id, c.Query(consts.UserName), c.FullPath())
+	err = h.bookService.UpdateBook(context.Background(), book.Title, book.Id, c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -55,9 +53,7 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
-	ctx := context.Background()
-
-	s, err := h.bookService.GetBook(&ctx, c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
+	s, err := h.bookService.GetBook(context.Background(), c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -66,8 +62,7 @@ func (h *HttpHandler) GetBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) DeleteBook(c *gin.Context) {
-	ctx := context.Background()
-	err := h.bookService.DeleteBook(&ctx, c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
+	err := h.bookService.DeleteBook(context.Background(), c.Query(consts.Id), c.Query(consts.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

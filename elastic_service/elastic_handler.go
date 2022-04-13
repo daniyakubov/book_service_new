@@ -26,33 +26,33 @@ func NewElasticHandler(client *elastic.Client) ElasticHandler {
 	}
 }
 
-func (e *ElasticHandler) UpdateBook(ctx *context.Context, title string, id string) (err error) {
+func (e *ElasticHandler) UpdateBook(ctx context.Context, title string, id string) (err error) {
 	_, err = e.Client.Update().
 		Index(consts.Index).
 		Id(id).
 		Doc(map[string]interface{}{consts.Title: title}).
-		Do(*ctx)
+		Do(ctx)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("couldn't update book with title %s and id %s", title, id))
 	}
 	return nil
 }
 
-func (e *ElasticHandler) AddBook(ctx *context.Context, body []byte) (string, error) {
+func (e *ElasticHandler) AddBook(ctx context.Context, body []byte) (string, error) {
 	res, err := e.Client.Index().
 		Index(consts.Index).
 		BodyString(string(body)).
-		Do(*ctx)
+		Do(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("couldn't update book with body: %s", string(body)))
 	}
 	return res.Id, err
 }
-func (e *ElasticHandler) GetBook(ctx *context.Context, id string) (src *models.Book, err error) {
+func (e *ElasticHandler) GetBook(ctx context.Context, id string) (src *models.Book, err error) {
 	get, err := e.Client.Get().
 		Index(consts.Index).
 		Id(id).
-		Do(*ctx)
+		Do(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("couldn't get book form server with id: %s", id))
 	}
@@ -64,11 +64,11 @@ func (e *ElasticHandler) GetBook(ctx *context.Context, id string) (src *models.B
 	return &book, err
 }
 
-func (e *ElasticHandler) DeleteBook(ctx *context.Context, id string) error {
+func (e *ElasticHandler) DeleteBook(ctx context.Context, id string) error {
 	_, err := e.Client.Delete().
 		Index(consts.Index).
 		Id(id).
-		Do(*ctx)
+		Do(ctx)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("couldn't delete book with id: %s", id))
 	}
@@ -89,6 +89,13 @@ func buildSearchQuery(client *elastic.Client, title string, author string, price
 		if to, err = strconv.Atoi(priceSplit[1]); err != nil {
 			return nil, errors.New("failed to pars `price_range` field")
 		}
+	}
+
+	if from < consts.MinPrice {
+		return nil, errors.New(fmt.Sprintf("illegal price range, price should be higher than %d", consts.MinPrice))
+	}
+	if to > consts.MaxPrice {
+		return nil, errors.New(fmt.Sprintf("illegal price range, price should be lower than %d", consts.MaxPrice))
 	}
 
 	all := elastic.NewMatchAllQuery()

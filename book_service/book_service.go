@@ -22,11 +22,12 @@ func NewBookService(booksCache cache.Cache, dbHandler db_service.DBHandler) Book
 	}
 }
 
-func (b *BookService) AddBook(ctx *context.Context, book *models.Book, username string, routeName string) (string, error) {
+func (b *BookService) AddBook(ctx context.Context, book *models.Book, username string, routeName string) (string, error) {
 	body, err := json.Marshal(book)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("couldn't unmarshal result of book with id: %s, in AddBook function ", book.Id))
 	}
+
 	id, err := b.dbHandler.AddBook(ctx, body)
 	if err != nil {
 		return "", err
@@ -39,7 +40,7 @@ func (b *BookService) AddBook(ctx *context.Context, book *models.Book, username 
 	return id, nil
 }
 
-func (b *BookService) UpdateBook(ctx *context.Context, title string, id string, username string, routeName string) error {
+func (b *BookService) UpdateBook(ctx context.Context, title string, id string, username string, routeName string) error {
 	err := b.dbHandler.UpdateBook(ctx, title, id)
 	if err != nil {
 		return err
@@ -52,7 +53,7 @@ func (b *BookService) UpdateBook(ctx *context.Context, title string, id string, 
 	return nil
 }
 
-func (b *BookService) GetBook(ctx *context.Context, id string, username string, routeName string) (*models.Book, error) {
+func (b *BookService) GetBook(ctx context.Context, id string, username string, routeName string) (*models.Book, error) {
 	src, err := b.dbHandler.GetBook(ctx, id)
 	src.Id = id
 
@@ -63,7 +64,7 @@ func (b *BookService) GetBook(ctx *context.Context, id string, username string, 
 	return src, nil
 }
 
-func (b *BookService) DeleteBook(ctx *context.Context, id string, username string, routeName string) error {
+func (b *BookService) DeleteBook(ctx context.Context, id string, username string, routeName string) error {
 	err := b.dbHandler.DeleteBook(ctx, id)
 	if err != nil {
 		return err
@@ -103,7 +104,7 @@ func (b *BookService) StoreInfo(username string, routeName string) (info map[str
 }
 
 func (b *BookService) Activity(username string) ([]models.Action, error) {
-	actions, err := b.booksCache.Get(username)
+	actions, err := b.booksCache.GetLastActions(username)
 	if err != nil {
 		return nil, err
 	}
