@@ -5,30 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/daniyakubov/book_service_n/cache"
-	"github.com/daniyakubov/book_service_n/db_service"
+	"github.com/daniyakubov/book_service_n/datastore"
 	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
 )
 
 type BookService struct {
 	booksCache cache.Cache
-	dbHandler  db_service.DBHandler
+	dbHandler  datastore.BookStorer
 }
 
-func NewBookService(booksCache cache.Cache, dbHandler db_service.DBHandler) BookService {
+func NewBookService(booksCache cache.Cache, dbHandler datastore.BookStorer) BookService {
 	return BookService{
 		booksCache: booksCache,
 		dbHandler:  dbHandler,
 	}
 }
 
-func (b *BookService) AddBook(ctx context.Context, book *models.Book, username string, routeName string) (string, error) {
+func (b *BookService) InsertBook(ctx context.Context, book *models.Book, username string, routeName string) (string, error) {
 	body, err := json.Marshal(book)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("couldn't unmarshal result of book with id: %s, in AddBook function ", book.Id))
 	}
 
-	id, err := b.dbHandler.AddBook(ctx, body)
+	id, err := b.dbHandler.InsertBook(ctx, body)
 	if err != nil {
 		return "", err
 	}
@@ -78,7 +78,12 @@ func (b *BookService) DeleteBook(ctx context.Context, id string, username string
 }
 
 func (b *BookService) Search(title string, author string, username string, routeName string, priceRange string) ([]models.Book, error) {
-	res, err := b.dbHandler.Search(title, author, priceRange)
+	searchParams := make(map[string]string)
+	searchParams["title"] = title
+	searchParams["author"] = author
+	searchParams["price_range"] = priceRange
+
+	res, err := b.dbHandler.Search(searchParams)
 	if err != nil {
 		return nil, err
 	}

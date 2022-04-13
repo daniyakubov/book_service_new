@@ -12,25 +12,25 @@ import (
 var _ Cache = &RedisCache{}
 
 type RedisCache struct {
-	host       string
-	db         int
-	expiration time.Duration
-	maxSize    int64
-	client     *redis.Client
+	redisAdress string
+	db          int
+	expiration  time.Duration
+	maxSize     int64
+	client      *redis.Client
 }
 
-func NewRedisCache(host string, db int, exp time.Duration, maxSize int64, client *redis.Client) *RedisCache {
+func NewRedisCache(redisAdress string, db int, exp time.Duration, maxSize int64, client *redis.Client) *RedisCache {
 	return &RedisCache{
-		host:       host,
-		db:         db,
-		expiration: exp,
-		maxSize:    maxSize,
-		client:     client,
+		redisAdress: redisAdress,
+		db:          db,
+		expiration:  exp,
+		maxSize:     maxSize,
+		client:      client,
 	}
 }
 func (cache *RedisCache) getClient() *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     cache.host,
+		Addr:     cache.redisAdress,
 		Password: "",
 		DB:       cache.db,
 	})

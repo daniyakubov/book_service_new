@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/daniyakubov/book_service_n/book_service"
 	"github.com/daniyakubov/book_service_n/cache"
 	"github.com/daniyakubov/book_service_n/config"
@@ -19,18 +20,17 @@ func main() {
 	}
 	eHandler := elastic_service.NewElasticHandler(client)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     config.Host,
+		Addr:     config.RedisAddress,
 		Password: config.Password,
 		DB:       config.DB,
 	})
-	bookService := book_Service.NewBookService(cache.NewRedisCache(config.Host, config.DB, config.Expiration, config.MaxActions, redisClient), &eHandler)
+	bookService := book_Service.NewBookService(cache.NewRedisCache(config.RedisAddress, config.DB, config.Expiration, config.MaxActions, redisClient), &eHandler)
 	httpHandler := http_service.NewHttpHandler(bookService)
 
 	router := gin.Default()
-	routeService := utils.NewRoutesService(&httpHandler)
-	router = routeService.Routes(router)
+	router = utils.Routes(router, &httpHandler)
 
-	err = router.Run(":" + config.HttpAddress)
+	err = router.Run(fmt.Sprintf(":%s", config.Port))
 	if err != nil {
 		panic(err)
 	}
