@@ -1,4 +1,4 @@
-package utils
+package service
 
 import (
 	"github.com/daniyakubov/book_service_n/http_service"

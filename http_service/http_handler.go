@@ -49,6 +49,8 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	c.JSON(http.StatusBadRequest, "book updated")
 }
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
@@ -67,7 +69,8 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	return
+
+	c.JSON(http.StatusBadRequest, "book deleted")
 }
 
 func (h *HttpHandler) Search(c *gin.Context) {
@@ -75,7 +78,7 @@ func (h *HttpHandler) Search(c *gin.Context) {
 	searchParams["title"] = c.Query(elastic_fields.Title)
 	searchParams["author"] = c.Query(elastic_fields.Author)
 	searchParams["price_range"] = c.Query(query_fields.PriceRange)
-	s, err := h.bookService.Search(searchParams, c.Query(query_fields.UserName), c.FullPath())
+	s, err := h.bookService.Search(context.Background(), searchParams, c.Query(query_fields.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -85,12 +88,15 @@ func (h *HttpHandler) Search(c *gin.Context) {
 }
 
 func (h *HttpHandler) StoreInfo(c *gin.Context) {
-	info, err := h.bookService.StoreInfo(c.Query(query_fields.UserName), c.FullPath())
+	info, err := h.bookService.StoreInfo(context.Background(), c.Query(query_fields.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"books_num": info["books_num"], "distinct_authors_num": info["distinct_authors_num"]})
+
+	c.JSON(http.StatusOK, gin.H{
+		"store_info": info,
+	})
 }
 
 func (h *HttpHandler) Activity(c *gin.Context) {

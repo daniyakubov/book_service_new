@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var _ Cache = &RedisCache{}
+var _ ActivityCacher = &RedisCache{}
 
 type RedisCache struct {
 	address    string
@@ -56,7 +56,7 @@ func (cache *RedisCache) AddAction(key string, method string, routeName string) 
 func (cache *RedisCache) GetLastActions(key string) ([]models.Action, error) {
 	length, err := cache.client.LLen(key).Result()
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, fmt.Sprintf("failded to get length of actions, of username %s", key))
 	}
 	items, err := cache.client.LRange(key, 0, length).Result()
 	if err != nil {

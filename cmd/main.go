@@ -5,9 +5,9 @@ import (
 	"github.com/daniyakubov/book_service_n/book_service"
 	"github.com/daniyakubov/book_service_n/cache"
 	"github.com/daniyakubov/book_service_n/config"
-	"github.com/daniyakubov/book_service_n/elastic_service"
+	"github.com/daniyakubov/book_service_n/datastore"
 	"github.com/daniyakubov/book_service_n/http_service"
-	"github.com/daniyakubov/book_service_n/utils"
+	"github.com/daniyakubov/book_service_n/service"
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic/v7"
 	"gopkg.in/redis.v5"
@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	eHandler := elastic_service.NewElasticHandler(client)
+	eHandler := datastore.NewElasticHandler(client)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     config.RedisAddress,
 		Password: config.Password,
@@ -28,7 +28,7 @@ func main() {
 	httpHandler := http_service.NewHttpHandler(bookService)
 
 	router := gin.Default()
-	router = utils.Routes(router, &httpHandler)
+	router = service.Routes(router, &httpHandler)
 
 	err = router.Run(fmt.Sprintf(":%s", config.Port))
 	if err != nil {

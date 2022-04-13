@@ -11,14 +11,14 @@ import (
 )
 
 type BookService struct {
-	booksCache cache.Cache
-	dbHandler  datastore.BookStorer
+	activityHandler cache.ActivityCacher
+	dbHandler       datastore.BookStorer
 }
 
-func NewBookService(booksCache cache.Cache, dbHandler datastore.BookStorer) BookService {
+func NewBookService(booksCache cache.ActivityCacher, dbHandler datastore.BookStorer) BookService {
 	return BookService{
-		booksCache: booksCache,
-		dbHandler:  dbHandler,
+		activityHandler: booksCache,
+		dbHandler:       dbHandler,
 	}
 }
 
@@ -33,10 +33,11 @@ func (b *BookService) InsertBook(ctx context.Context, book *models.Book, usernam
 		return "", err
 	}
 
-	err = b.booksCache.AddAction(username, "Put", routeName)
+	err = b.activityHandler.AddAction(username, "Put", routeName)
 	if err != nil {
 		return "", err
 	}
+
 	return id, nil
 }
 
@@ -46,10 +47,11 @@ func (b *BookService) UpdateBook(ctx context.Context, title string, id string, u
 		return err
 	}
 
-	err = b.booksCache.AddAction(username, "Post", routeName)
+	err = b.activityHandler.AddAction(username, "Post", routeName)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -57,10 +59,11 @@ func (b *BookService) GetBook(ctx context.Context, id string, username string, r
 	src, err := b.dbHandler.GetBook(ctx, id)
 	src.Id = id
 
-	err = b.booksCache.AddAction(username, "Get", routeName)
+	err = b.activityHandler.AddAction(username, "Get", routeName)
 	if err != nil {
 		return nil, err
 	}
+
 	return src, nil
 }
 
@@ -70,42 +73,45 @@ func (b *BookService) DeleteBook(ctx context.Context, id string, username string
 		return err
 	}
 
-	err = b.booksCache.AddAction(username, "Delete", routeName)
+	err = b.activityHandler.AddAction(username, "Delete", routeName)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (b *BookService) Search(fields map[string]string, username string, routeName string) ([]models.Book, error) {
+func (b *BookService) Search(ctx context.Context, fields map[string]string, username string, routeName string) ([]models.Book, error) {
 
-	res, err := b.dbHandler.Search(fields)
+	res, err := b.dbHandler.Search(ctx, fields)
 	if err != nil {
 		return nil, err
 	}
 
-	err = b.booksCache.AddAction(username, "Get", routeName)
+	err = b.activityHandler.AddAction(username, "Get", routeName)
 	if err != nil {
 		return nil, err
 	}
+
 	return res, nil
 }
 
-func (b *BookService) StoreInfo(username string, routeName string) (info map[string]interface{}, err error) {
-	info, err = b.dbHandler.StoreInfo()
+func (b *BookService) StoreInfo(ctx context.Context, username string, routeName string) (info map[string]interface{}, err error) {
+	info, err = b.dbHandler.StoreInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	err = b.booksCache.AddAction(username, "Get", routeName)
+	err = b.activityHandler.AddAction(username, "Get", routeName)
 	if err != nil {
 		return nil, err
 	}
+
 	return info, nil
 }
 
 func (b *BookService) Activity(username string) ([]models.Action, error) {
-	actions, err := b.booksCache.GetLastActions(username)
+	actions, err := b.activityHandler.GetLastActions(username)
 	if err != nil {
 		return nil, err
 	}
