@@ -77,11 +77,7 @@ func (b *BookService) DeleteBook(ctx context.Context, id string, username string
 	return nil
 }
 
-func (b *BookService) Search(title string, author string, username string, routeName string, priceRange string) ([]models.Book, error) {
-	searchParams := make(map[string]string)
-	searchParams["title"] = title
-	searchParams["author"] = author
-	searchParams["price_range"] = priceRange
+func (b *BookService) Search(searchParams map[string]string, username string, routeName string) ([]models.Book, error) {
 
 	res, err := b.dbHandler.Search(searchParams)
 	if err != nil {

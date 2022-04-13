@@ -71,7 +71,11 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) Search(c *gin.Context) {
-	s, err := h.bookService.Search(c.Query(elastic_fields.Title), c.Query(elastic_fields.Author), c.Query(query_fields.UserName), c.FullPath(), c.Query(query_fields.PriceRange))
+	searchParams := make(map[string]string)
+	searchParams["title"] = c.Query(elastic_fields.Title)
+	searchParams["author"] = c.Query(elastic_fields.Author)
+	searchParams["price_range"] = c.Query(query_fields.PriceRange)
+	s, err := h.bookService.Search(searchParams, c.Query(query_fields.UserName), c.FullPath())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
