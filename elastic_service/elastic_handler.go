@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/daniyakubov/book_service_n/config"
 	"github.com/daniyakubov/book_service_n/consts"
+	"github.com/daniyakubov/book_service_n/consts/elastic_fields"
 	"github.com/daniyakubov/book_service_n/datastore"
-	"github.com/daniyakubov/book_service_n/elastic_fields"
 	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
 	"github.com/olivere/elastic/v7"
@@ -77,10 +77,10 @@ func (e *ElasticHandler) DeleteBook(ctx context.Context, id string) error {
 	return nil
 }
 
-func buildSearchQuery(client *elastic.Client, searchParams map[string]string) (s *elastic.SearchService, err error) {
+func buildSearchQuery(fields map[string]string) (s *elastic.BoolQuery, err error) {
 	var from, to int
-	if searchParams["price_range"] != "" {
-		priceSplit := strings.Split(string(searchParams["price_range"]), "-")
+	if price, ok := fields["price_range"]; ok && price != "" {
+		priceSplit := strings.Split(string(fields["price_range"]), "-")
 		if len(priceSplit) != 2 {
 			return nil, errors.New("failed to pars `price_range` field")
 		}
@@ -99,38 +99,39 @@ func buildSearchQuery(client *elastic.Client, searchParams map[string]string) (s
 		return nil, errors.New(fmt.Sprintf("illegal price range, price should be lower than %d", consts.MaxPrice))
 	}
 
-	all := elastic.NewMatchAllQuery()
-	builder := client.Search().Index(consts.Index).Query(all).Pretty(true)
 	q := elastic.NewBoolQuery()
 
-	if searchParams["title"] != "" {
-		q.Must(elastic.NewMatchQuery(elastic_fields.Title, searchParams["title"]))
+	if fields["title"] != "" {
+		q.Must(elastic.NewMatchQuery(elastic_fields.Title, fields["title"]))
 	}
-	if searchParams["author"] != "" {
-		q.Must(elastic.NewMatchQuery(elastic_fields.Author, searchParams["author"]))
+	if fields["author"] != "" {
+		q.Must(elastic.NewMatchQuery(elastic_fields.Author, fields["author"]))
 	}
 	if to != 0 {
 		q.Must(elastic.NewRangeQuery(elastic_fields.Price).From(from).To(to))
 	}
-	builder = builder.Query(q)
-	return builder, nil
+	return q, nil
 }
 
-func (e *ElasticHandler) Search(searchParams map[string]string) (res []models.Book, err error) {
-	builder, err := buildSearchQuery(e.Client, searchParams)
+func (e *ElasticHandler) Search(fields map[string]string) (res []models.Book, err error) {
+	all := elastic.NewMatchAllQuery()
+	builder := e.Client.Search().Index(consts.Index).Query(all).Pretty(true)
+	q, err := buildSearchQuery(fields)
 	if err != nil {
 		return nil, err
 	}
+
+	builder = builder.Query(q)
 	searchResult, err := builder.Pretty(true).Size(config.MaxQueryResults).Do(context.TODO())
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("search failed for title: %s, author: %s, priceRange: %s", searchParams["title"], searchParams["author"], searchParams["priceRange"]))
+		return nil, errors.Wrap(err, fmt.Sprintf("search failed for title: %s, author: %s, priceRange: %s", fields["title"], fields["author"], fields["priceRange"]))
 	}
 
 	res = []models.Book{}
 	for _, hit := range searchResult.Hits.Hits {
 		var book models.Book
 		if err := json.Unmarshal(hit.Source, &book); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unmarshaling in search failed for title: %s, author: %s, priceRange: %s", searchParams["title"], searchParams["author"], searchParams["priceRange"]))
+			return nil, errors.Wrap(err, fmt.Sprintf("unmarshaling in search failed for title: %s, author: %s, priceRange: %s", fields["title"], fields["author"], fields["priceRange"]))
 		}
 		book.Id = hit.Id
 		res = append(res, book)

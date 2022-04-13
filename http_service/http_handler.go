@@ -3,9 +3,9 @@ package http_service
 import (
 	"context"
 	"github.com/daniyakubov/book_service_n/book_service"
-	"github.com/daniyakubov/book_service_n/elastic_fields"
+	"github.com/daniyakubov/book_service_n/consts/elastic_fields"
+	"github.com/daniyakubov/book_service_n/consts/query_fields"
 	"github.com/daniyakubov/book_service_n/models"
-	"github.com/daniyakubov/book_service_n/query_fields"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
