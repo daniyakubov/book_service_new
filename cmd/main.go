@@ -24,8 +24,8 @@ func main() {
 		Password: config.Password,
 		DB:       config.DB,
 	})
-	bookService := book_Service.NewBookService(cache.NewRedisCache(config.RedisAddress, config.DB, config.Expiration, config.MaxActions, redisClient), &eHandler)
-	httpHandler := http_service.NewHttpHandler(bookService)
+	bookService := book_Service.NewBookService(&eHandler)
+	httpHandler := http_service.NewHttpHandler(bookService, cache.NewRedisCache(config.RedisAddress, config.DB, config.Expiration, config.MaxActions, redisClient))
 
 	router := gin.Default()
 	router = service.Routes(router, &httpHandler)
