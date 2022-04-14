@@ -116,20 +116,21 @@ func (h *HttpHandler) Activity(c *gin.Context) {
 	c.JSON(http.StatusOK, actions)
 }
 
-func (h *HttpHandler) AddAction(c *gin.Context) {
-	username := username{c.Query(fields_name.UserName)}
+func (h *HttpHandler) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := username{c.Query(fields_name.UserName)}
 
-	if c.Request.Method == "PUT" || c.Request.Method == "POST" {
-		if err := c.ShouldBindBodyWith(&username, binding.JSON); err != nil {
-			c.JSON(http.StatusBadRequest, "error: couldn't bind body in Activity request")
-			return
+		if c.Request.Method == "PUT" || c.Request.Method == "POST" {
+			if err := c.ShouldBindBodyWith(&username, binding.JSON); err != nil {
+				c.JSON(http.StatusBadRequest, "error: couldn't bind body in Activity request")
+				return
+			}
 		}
-	}
 
-	err := h.activityHandler.AddAction(username.Username, c.Request.Method, c.FullPath())
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		err := h.activityHandler.AddAction(username.Username, c.Request.Method, c.FullPath())
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		c.Next()
 	}
-
-	c.Next()
 }

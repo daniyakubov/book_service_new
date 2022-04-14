@@ -6,7 +6,7 @@ import (
 )
 
 func Routes(router *gin.Engine, h *http_service.HttpHandler) *gin.Engine {
-	router.Use(h.AddAction)
+	router.Use(h.Middleware())
 	book := router.Group("/book")
 	{
 		book.GET("", h.GetBook)
