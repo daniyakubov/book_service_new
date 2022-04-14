@@ -3,9 +3,8 @@ package http_service
 import (
 	"context"
 	"github.com/daniyakubov/book_service_n/book_service"
-	"github.com/daniyakubov/book_service_n/cache"
-	"github.com/daniyakubov/book_service_n/consts/elastic_fields"
-	"github.com/daniyakubov/book_service_n/consts/query_fields"
+	"github.com/daniyakubov/book_service_n/consts/fields_name"
+	"github.com/daniyakubov/book_service_n/datastore/cache"
 	"github.com/daniyakubov/book_service_n/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -62,7 +61,7 @@ func (h *HttpHandler) UpdateBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) GetBook(c *gin.Context) {
-	s, err := h.bookService.GetBook(context.Background(), c.Query(elastic_fields.Id))
+	s, err := h.bookService.GetBook(context.Background(), c.Query(fields_name.Id))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -72,7 +71,7 @@ func (h *HttpHandler) GetBook(c *gin.Context) {
 }
 
 func (h *HttpHandler) DeleteBook(c *gin.Context) {
-	err := h.bookService.DeleteBook(context.Background(), c.Query(elastic_fields.Id))
+	err := h.bookService.DeleteBook(context.Background(), c.Query(fields_name.Id))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -83,9 +82,10 @@ func (h *HttpHandler) DeleteBook(c *gin.Context) {
 
 func (h *HttpHandler) Search(c *gin.Context) {
 	searchParams := make(map[string]string)
-	searchParams["title"] = c.Query(elastic_fields.Title)
-	searchParams["author"] = c.Query(elastic_fields.Author)
-	searchParams["price_range"] = c.Query(query_fields.PriceRange)
+	searchParams["title"] = c.Query(fields_name.Title)
+	searchParams["author"] = c.Query(fields_name.Author)
+	searchParams["price_range"] = c.Query(fields_name.PriceRange)
+
 	s, err := h.bookService.Search(context.Background(), searchParams)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -108,8 +108,7 @@ func (h *HttpHandler) StoreInfo(c *gin.Context) {
 }
 
 func (h *HttpHandler) Activity(c *gin.Context) {
-
-	actions, err := h.activityHandler.GetLastActions(c.Query(query_fields.UserName))
+	actions, err := h.activityHandler.GetLastActions(c.Query(fields_name.UserName))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -118,19 +117,19 @@ func (h *HttpHandler) Activity(c *gin.Context) {
 }
 
 func (h *HttpHandler) AddAction(c *gin.Context) {
-	un := username{c.Query(query_fields.UserName)}
+	username := username{c.Query(fields_name.UserName)}
 
 	if c.Request.Method == "PUT" || c.Request.Method == "POST" {
-		if err := c.ShouldBindBodyWith(&un, binding.JSON); err != nil {
+		if err := c.ShouldBindBodyWith(&username, binding.JSON); err != nil {
 			c.JSON(http.StatusBadRequest, "error: couldn't bind body in Activity request")
 			return
 		}
 	}
 
-	if c.FullPath() != "/activity" {
-		err := h.activityHandler.AddAction(un.Username, c.Request.Method, c.FullPath())
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}
+	err := h.activityHandler.AddAction(username.Username, c.Request.Method, c.FullPath())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
+
+	c.Next()
 }

@@ -62,7 +62,6 @@ func (b *BookService) DeleteBook(ctx context.Context, id string) error {
 }
 
 func (b *BookService) Search(ctx context.Context, fields map[string]string) ([]models.Book, error) {
-
 	res, err := b.dbHandler.Search(ctx, fields)
 	if err != nil {
 		return nil, err

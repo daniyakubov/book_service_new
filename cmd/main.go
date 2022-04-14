@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/daniyakubov/book_service_n/book_service"
-	"github.com/daniyakubov/book_service_n/cache"
 	"github.com/daniyakubov/book_service_n/config"
 	"github.com/daniyakubov/book_service_n/datastore"
+	"github.com/daniyakubov/book_service_n/datastore/cache"
 	"github.com/daniyakubov/book_service_n/http_service"
 	"github.com/daniyakubov/book_service_n/service"
 	"github.com/gin-gonic/gin"

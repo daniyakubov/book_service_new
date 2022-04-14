@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/daniyakubov/book_service_n/config"
 	"github.com/daniyakubov/book_service_n/consts"
-	"github.com/daniyakubov/book_service_n/consts/elastic_fields"
+	"github.com/daniyakubov/book_service_n/consts/fields_name"
 	"github.com/daniyakubov/book_service_n/models"
 	errors "github.com/fiverr/go_errors"
 	"github.com/olivere/elastic/v7"
@@ -30,7 +30,7 @@ func (e *ElasticHandler) UpdateBook(ctx context.Context, title string, id string
 	_, err = e.Client.Update().
 		Index(consts.Index).
 		Id(id).
-		Doc(map[string]interface{}{elastic_fields.Title: title}).
+		Doc(map[string]interface{}{fields_name.Title: title}).
 		Do(ctx)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("couldn't update book with title %s and id %s", title, id))
@@ -80,6 +80,15 @@ func (e *ElasticHandler) DeleteBook(ctx context.Context, id string) error {
 }
 
 func buildSearchQuery(fields map[string]string) (s *elastic.BoolQuery, err error) {
+	q := elastic.NewBoolQuery()
+
+	if fields["title"] != "" {
+		q.Must(elastic.NewMatchQuery(fields_name.Title, fields["title"]))
+	}
+	if fields["author"] != "" {
+		q.Must(elastic.NewMatchQuery(fields_name.Author, fields["author"]))
+	}
+
 	var from, to int
 	if price, ok := fields["price_range"]; ok && price != "" {
 		priceSplit := strings.Split(string(fields["price_range"]), "-")
@@ -92,28 +101,28 @@ func buildSearchQuery(fields map[string]string) (s *elastic.BoolQuery, err error
 		if to, err = strconv.Atoi(priceSplit[1]); err != nil {
 			return nil, errors.New("failed to pars `price_range` field")
 		}
-	}
 
-	if from < consts.MinPrice {
-		return nil, errors.New(fmt.Sprintf("illegal price range, price should be higher than %d", consts.MinPrice))
-	}
-	if to > consts.MaxPrice {
-		return nil, errors.New(fmt.Sprintf("illegal price range, price should be lower than %d", consts.MaxPrice))
-	}
+		if from < consts.MinPrice {
+			return nil, errors.New(fmt.Sprintf("illegal price range, price should be higher than %d", consts.MinPrice))
+		}
+		if to > consts.MaxPrice {
+			return nil, errors.New(fmt.Sprintf("illegal price range, price should be lower than %d", consts.MaxPrice))
+		}
 
-	q := elastic.NewBoolQuery()
-
-	if fields["title"] != "" {
-		q.Must(elastic.NewMatchQuery(elastic_fields.Title, fields["title"]))
-	}
-	if fields["author"] != "" {
-		q.Must(elastic.NewMatchQuery(elastic_fields.Author, fields["author"]))
-	}
-	if to != 0 {
-		q.Must(elastic.NewRangeQuery(elastic_fields.Price).From(from).To(to))
+		if to != 0 {
+			q.Must(elastic.NewRangeQuery(fields_name.Price).From(from).To(to))
+		}
 	}
 
 	return q, nil
+}
+
+func prettyMapToString(m map[string]string) string {
+	arr := make([]string, 0)
+	for key, val := range m {
+		arr = append(arr, fmt.Sprintf("%v: %v", key, val))
+	}
+	return strings.Join(arr, ",")
 }
 
 func (e *ElasticHandler) Search(ctx context.Context, fields map[string]string) ([]models.Book, error) {
@@ -133,7 +142,7 @@ func (e *ElasticHandler) Search(ctx context.Context, fields map[string]string) (
 	for _, hit := range searchResult.Hits.Hits {
 		var book models.Book
 		if err := json.Unmarshal(hit.Source, &book); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unmarshaling in search failed for title: %s, author: %s, priceRange: %s", fields["title"], fields["author"], fields["priceRange"]))
+			return nil, errors.Wrap(err, fmt.Sprintf("unmarshaling in search failed for: %s", prettyMapToString(fields)))
 		}
 		book.Id = hit.Id
 		res = append(res, book)
@@ -156,15 +165,14 @@ func (e *ElasticHandler) StoreInfo(ctx context.Context) (info map[string]interfa
 		return nil, errors.New("agg returned nil in store information function")
 	}
 
-	agg2, found := agg.Cardinality("distinctAuthors")
+	authorsCount, found := searchResult.Aggregations["distinctAuthors"]
 	if !found {
 		return nil, errors.New("aggregation was not found for distinct authors in store information function")
 	}
-	if agg2 == nil || agg2.Value == nil {
-		return nil, errors.New("aggregation was nil for distinct authors in store information function")
-	}
+
 	info = make(map[string]interface{})
-	info["books_num"] = searchResult.Hits.TotalHits.Value
-	info["distinct_authors_num"] = int(*agg2.Value)
+	info["distinct_authors_num"] = authorsCount
+	info["books_num"] = searchResult.Hits.TotalHits
+
 	return info, nil
 }
