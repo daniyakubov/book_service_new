@@ -127,10 +127,11 @@ func (h *HttpHandler) Middleware() gin.HandlerFunc {
 			}
 		}
 
+		c.Next()
+
 		err := h.activityHandler.AddAction(username.Username, c.Request.Method, c.FullPath())
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
-		c.Next()
 	}
 }

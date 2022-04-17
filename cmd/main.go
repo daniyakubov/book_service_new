@@ -28,6 +28,7 @@ func main() {
 	httpHandler := http_service.NewHttpHandler(bookService, cache.NewRedisCache(config.RedisAddress, config.DB, config.Expiration, config.MaxActions, redisClient))
 
 	router := gin.Default()
+	router.Use(httpHandler.Middleware())
 	router = service.Routes(router, &httpHandler)
 
 	err = router.Run(fmt.Sprintf(":%s", config.Port))

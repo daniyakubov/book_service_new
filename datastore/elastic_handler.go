@@ -117,14 +117,6 @@ func buildSearchQuery(fields map[string]string) (s *elastic.BoolQuery, err error
 	return q, nil
 }
 
-func prettyMapToString(m map[string]string) string {
-	arr := make([]string, 0)
-	for key, val := range m {
-		arr = append(arr, fmt.Sprintf("%v: %v", key, val))
-	}
-	return strings.Join(arr, ",")
-}
-
 func (e *ElasticHandler) Search(ctx context.Context, fields map[string]string) ([]models.Book, error) {
 	q, err := buildSearchQuery(fields)
 	if err != nil {
@@ -175,4 +167,12 @@ func (e *ElasticHandler) StoreInfo(ctx context.Context) (info map[string]interfa
 	info["books_num"] = searchResult.Hits.TotalHits
 
 	return info, nil
+}
+
+func prettyMapToString(m map[string]string) string {
+	arr := make([]string, 0)
+	for key, val := range m {
+		arr = append(arr, fmt.Sprintf("%v: %v", key, val))
+	}
+	return strings.Join(arr, ",")
 }
